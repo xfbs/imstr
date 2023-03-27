@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::ops::Range;
 use std::ops::Deref;
+use std::cmp::Ordering;
 use std::string::{String as StdString};
 pub use std::string::{FromUtf16Error, FromUtf8Error};
 
@@ -53,22 +54,44 @@ impl String {
         }
     }
 
-    fn push(&mut self, c: char) {
+    pub fn push(&mut self, c: char) {
         unsafe {
             self.unsafe_modify(|mut string| {
                 string.push(c);
                 string
-            })
+            });
         }
+        self.offset.end = self.string.as_bytes().len();
     }
 
-    fn push_str(&mut self, slice: &str) {
+    pub fn push_str(&mut self, slice: &str) {
         unsafe {
             self.unsafe_modify(|mut string| {
                 string.push_str(slice);
                 string
-            })
+            });
         }
+        self.offset.end = self.string.as_bytes().len();
+    }
+}
+
+impl PartialEq<str> for String {
+    fn eq(&self, other: &str) -> bool {
+        self.as_str().eq(other)
+    }
+}
+
+impl Eq for String {}
+
+impl PartialEq<String> for String {
+    fn eq(&self, other: &String) -> bool {
+        self.as_str().eq(other.as_str())
+    }
+}
+
+impl PartialOrd<String> for String {
+    fn partial_cmp(&self, other: &String) -> Option<Ordering> {
+        self.as_str().partial_cmp(other.as_str())
     }
 }
 
@@ -83,6 +106,24 @@ impl Deref for String {
 
     fn deref(&self) -> &Self::Target {
         self.as_str()
+    }
+}
+
+impl From<&str> for String {
+    fn from(string: &str) -> Self {
+        String {
+            string: Arc::new(StdString::from(string)),
+            offset: 0..string.as_bytes().len(),
+        }
+    }
+}
+
+impl From<StdString> for String {
+    fn from(string: StdString) -> Self {
+        String {
+            offset: 0..string.as_bytes().len(),
+            string: Arc::new(string),
+        }
     }
 }
 
