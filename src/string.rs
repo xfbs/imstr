@@ -2,7 +2,12 @@ use std::sync::Arc;
 use std::ops::Range;
 use std::ops::Deref;
 use std::cmp::Ordering;
-use std::string::{String as StdString};
+use std::convert::Infallible;
+use std::string::{String as StdString, ToString as StdToString};
+use std::str::FromStr;
+use std::fmt::{Formatter, Display, Error as FmtError, Write};
+use std::hash::{Hash, Hasher};
+use std::iter::{FromIterator, Extend};
 pub use std::string::{FromUtf16Error, FromUtf8Error};
 
 #[derive(Clone, Debug)]
@@ -41,37 +46,52 @@ impl String {
         Ok(String::from_std_string(StdString::from_utf8(vec)?))
     }
 
+    pub fn from_utf8_lossy(bytes: &[u8]) -> String {
+        let string = StdString::from_utf8_lossy(bytes).into_owned();
+        String::from_std_string(string)
+    }
+
     pub fn as_str(&self) -> &str {
         let slice = &self.string.as_bytes()[self.offset.start..self.offset.end];
         unsafe { std::str::from_utf8_unchecked(slice) }
     }
 
-    unsafe fn unsafe_modify<F: FnOnce(StdString) -> StdString>(&mut self, f: F) {
+    unsafe fn unchecked_append<F: FnOnce(StdString) -> StdString>(&mut self, f: F) {
         if let Some(mut string_ref) = Arc::get_mut(&mut self.string) {
             let string: StdString = std::mem::take(&mut string_ref);
             *string_ref = f(string);
         } else {
+            let string = StdString::clone(&self.string);
+            self.string = Arc::new(f(string));
+        }
+
+        self.offset.end = self.string.as_bytes().len();
+    }
+
+    pub fn truncate(&mut self, length: usize) {
+        if let Some(mut string) = Arc::get_mut(&mut self.string) {
+            string.truncate(length);
+        } else {
+            self.offset.end = self.offset.end.min(length);
         }
     }
 
     pub fn push(&mut self, c: char) {
         unsafe {
-            self.unsafe_modify(|mut string| {
+            self.unchecked_append(|mut string| {
                 string.push(c);
                 string
             });
         }
-        self.offset.end = self.string.as_bytes().len();
     }
 
     pub fn push_str(&mut self, slice: &str) {
         unsafe {
-            self.unsafe_modify(|mut string| {
+            self.unchecked_append(|mut string| {
                 string.push_str(slice);
                 string
             });
         }
-        self.offset.end = self.string.as_bytes().len();
     }
 }
 
@@ -131,9 +151,15 @@ pub trait ToString {
     fn to_string(&self) -> String;
 }
 
-impl ToString for String {
+impl Display for String {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> Result<(), FmtError> {
+        self.as_str().fmt(formatter)
+    }
+}
+
+impl<T: std::string::ToString> ToString for T {
     fn to_string(&self) -> String {
-        self.clone()
+        std::string::ToString::to_string(self).into()
     }
 }
 
@@ -144,6 +170,63 @@ impl AnyString for String {}
 
 impl AnyString for std::string::String {}
 
+impl Write for String {
+    fn write_str(&mut self, string: &str) -> Result<(), FmtError> {
+        self.push_str(string);
+        Ok(())
+    }
+
+    fn write_char(&mut self, c: char) -> Result<(), FmtError> {
+        self.push(c);
+        Ok(())
+    }
+}
+
+impl FromStr for String {
+    type Err = Infallible;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(String::from(s))
+    }
+}
+
+// Delegate hash to contained string
+impl Hash for String {
+    fn hash<H: Hasher>(&self, hasher: &mut H) {
+        self.as_str().hash(hasher)
+    }
+}
+
+impl Extend<char> for String {
+    fn extend<T: IntoIterator<Item = char>>(&mut self, iter: T) {
+        unsafe {
+            self.unchecked_append(|mut string| {
+                string.extend(iter);
+                string
+            });
+        }
+    }
+}
+
+impl<'a> Extend<&'a str> for String {
+    fn extend<T: IntoIterator<Item = &'a str>>(&mut self, iter: T) {
+        unsafe {
+            self.unchecked_append(|mut string| {
+                string.extend(iter);
+                string
+            });
+        }
+    }
+}
+
+impl FromIterator<char> for String {
+    fn from_iter<T: IntoIterator<Item = char>>(iter: T) -> Self {
+        let mut string = String::new();
+        string.extend(iter);
+        string
+    }
+}
+
+#[cfg(test)]
 const EXAMPLE_STRINGS: &[&str] = &[
     "",
     "text",

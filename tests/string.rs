@@ -7,6 +7,7 @@ use std::ops::RangeBounds;
 use std::panic;
 use std::str;
 use imstr::String;
+use imstr::string::ToString;
 
 #[test]
 fn test_from_utf8() {
@@ -36,6 +37,53 @@ fn test_push_str() {
     assert_eq!(&s[0..], "abcประเทศไทย中华Việt Nam");
 }
 
+#[test]
+fn test_from_str() {
+    let owned: Option<String> = "string".parse().ok();
+    assert_eq!(owned.as_ref().map(|s| &**s), Some("string"));
+}
+
+#[test]
+fn test_push() {
+    let mut data = String::from("ประเทศไทย中");
+    data.push('华');
+    data.push('b'); // 1 byte
+    data.push('¢'); // 2 byte
+    data.push('€'); // 3 byte
+    data.push('𤭢'); // 4 byte
+    assert_eq!(&data, "ประเทศไทย中华b¢€𤭢");
+}
+
+#[test]
+fn string_from_char_iter() {
+    let chars = vec!['h', 'e', 'l', 'l', 'o'];
+    let string: String = chars.into_iter().collect();
+    assert_eq!(&string, "hello");
+}
+
+/*
+#[test]
+fn test_from_iterator() {
+    let s = "ศไทย中华Việt Nam".to_string();
+    let t = "ศไทย中华";
+    let u = "Việt Nam";
+
+    let a: String = s.chars().collect();
+    assert_eq!(s, a);
+
+    let mut b = t.to_string();
+    b.extend(u.chars());
+    assert_eq!(s, b);
+
+    let c: String = [t, u].into_iter().collect();
+    assert_eq!(s, c);
+
+    let mut d = t.to_string();
+    d.extend(vec![u]);
+    assert_eq!(s, d);
+}
+*/
+
 
 /*
 pub trait IntoCow<'a, B: ?Sized>
@@ -58,22 +106,12 @@ impl<'a> IntoCow<'a, str> for &'a str {
 }
 
 #[test]
-fn test_from_str() {
-    let owned: Option<String> = "string".parse().ok();
-    assert_eq!(owned.as_ref().map(|s| &**s), Some("string"));
-}
-
-#[test]
 fn test_from_cow_str() {
     assert_eq!(String::from(Cow::Borrowed("string")), "string");
     assert_eq!(String::from(Cow::Owned(String::from("string"))), "string");
 }
 
-#[test]
-fn test_unsized_to_string() {
-    let s: &str = "abc";
-    let _: String = (*s).to_string();
-}
+
 
 #[test]
 fn test_from_utf8_lossy() {
@@ -128,6 +166,13 @@ fn test_from_utf8_lossy() {
         String::from("\u{FFFD}\u{FFFD}\u{FFFD}foo\u{FFFD}\u{FFFD}\u{FFFD}bar").into_cow()
     );
 }
+
+#[test]
+fn test_unsized_to_string() {
+    let s: &str = "abc";
+    let _: String = (*s).to_string();
+}
+
 
 #[test]
 fn test_from_utf16() {
@@ -236,17 +281,6 @@ fn test_add_assign() {
     assert_eq!(s.as_str(), "abc");
     s += "ประเทศไทย中华Việt Nam";
     assert_eq!(s.as_str(), "abcประเทศไทย中华Việt Nam");
-}
-
-#[test]
-fn test_push() {
-    let mut data = String::from("ประเทศไทย中");
-    data.push('华');
-    data.push('b'); // 1 byte
-    data.push('¢'); // 2 byte
-    data.push('€'); // 3 byte
-    data.push('𤭢'); // 4 byte
-    assert_eq!(data, "ประเทศไทย中华b¢€𤭢");
 }
 
 #[test]
@@ -449,27 +483,6 @@ fn test_vectors() {
     assert_eq!(format!("{:?}", vec![1]), "[1]");
     assert_eq!(format!("{:?}", vec![1, 2, 3]), "[1, 2, 3]");
     assert!(format!("{:?}", vec![vec![], vec![1], vec![1, 1]]) == "[[], [1], [1, 1]]");
-}
-
-#[test]
-fn test_from_iterator() {
-    let s = "ศไทย中华Việt Nam".to_string();
-    let t = "ศไทย中华";
-    let u = "Việt Nam";
-
-    let a: String = s.chars().collect();
-    assert_eq!(s, a);
-
-    let mut b = t.to_string();
-    b.extend(u.chars());
-    assert_eq!(s, b);
-
-    let c: String = [t, u].into_iter().collect();
-    assert_eq!(s, c);
-
-    let mut d = t.to_string();
-    d.extend(vec![u]);
-    assert_eq!(s, d);
 }
 
 #[test]
