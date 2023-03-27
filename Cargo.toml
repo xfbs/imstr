@@ -3,5 +3,9 @@ name = "imstr"
 version = "0.1.0"
 edition = "2021"
 description = "Immutable string"
+documentation = "https://docs.rs/imstr"
+repository = "https://github.com/xbfs/imstr"
+authors = ["Patrick Elsen <pelsen@xfbs.net>"]
+license = "MIT"
 
 [dependencies]
