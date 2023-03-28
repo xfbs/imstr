@@ -10,7 +10,7 @@ be sliced into a lot of substrings.
 ## Similar
 
 | Crate | Zero-Copy | Slicing | Modify | Compatible | Notes |
-| --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | --- | --- |
 | [Tendril](https://crates.io/crates/tendril) | Yes | Yes | Yes | No | Complex implementation |
 | [Immut String](https://crates.io/crates/immut_string) | Yes | No | No |  | Simple |
 | [Immutable String](https://crates.io/crates/immutable_string) | No | No | No | | |
