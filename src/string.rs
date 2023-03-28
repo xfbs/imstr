@@ -1,14 +1,14 @@
-use std::sync::Arc;
-use std::ops::Range;
-use std::ops::Deref;
 use std::cmp::Ordering;
 use std::convert::Infallible;
-use std::string::{String as StdString, ToString as StdToString};
-use std::str::FromStr;
-use std::fmt::{Formatter, Display, Error as FmtError, Write};
+use std::fmt::{Display, Error as FmtError, Formatter, Write};
 use std::hash::{Hash, Hasher};
-use std::iter::{FromIterator, Extend};
+use std::iter::{Extend, FromIterator};
+use std::ops::Range;
+use std::ops::{Add, AddAssign, Deref};
+use std::str::FromStr;
 pub use std::string::{FromUtf16Error, FromUtf8Error};
+use std::string::{String as StdString, ToString as StdToString};
+use std::sync::Arc;
 
 /// Cheaply clonable and slicable UTF-8 string type.
 ///
@@ -165,6 +165,12 @@ impl From<&str> for String {
     }
 }
 
+impl From<char> for String {
+    fn from(c: char) -> Self {
+        StdString::from(c).into()
+    }
+}
+
 impl From<StdString> for String {
     fn from(string: StdString) -> Self {
         String {
@@ -190,13 +196,6 @@ impl<T: std::string::ToString> ToString for T {
     }
 }
 
-pub trait AnyString {
-}
-
-impl AnyString for String {}
-
-impl AnyString for std::string::String {}
-
 impl Write for String {
     fn write_str(&mut self, string: &str) -> Result<(), FmtError> {
         self.push_str(string);
@@ -216,6 +215,13 @@ impl FromStr for String {
     }
 }
 
+#[test]
+fn can_from_str() {
+    let input = "test";
+    let string = String::from_str(input).unwrap();
+    assert_eq!(&string, input);
+}
+
 // Delegate hash to contained string
 impl Hash for String {
     fn hash<H: Hasher>(&self, hasher: &mut H) {
@@ -225,6 +231,17 @@ impl Hash for String {
 
 impl Extend<char> for String {
     fn extend<T: IntoIterator<Item = char>>(&mut self, iter: T) {
+        unsafe {
+            self.unchecked_append(|mut string| {
+                string.extend(iter);
+                string
+            });
+        }
+    }
+}
+
+impl<'a> Extend<&'a char> for String {
+    fn extend<T: IntoIterator<Item = &'a char>>(&mut self, iter: T) {
         unsafe {
             self.unchecked_append(|mut string| {
                 string.extend(iter);
@@ -253,12 +270,36 @@ impl FromIterator<char> for String {
     }
 }
 
+impl Add<&str> for String {
+    type Output = String;
+    fn add(mut self, string: &str) -> Self::Output {
+        self.push_str(string);
+        self
+    }
+}
+
+impl AddAssign<&str> for String {
+    fn add_assign(&mut self, string: &str) {
+        self.push_str(string);
+    }
+}
+
 #[cfg(test)]
-const EXAMPLE_STRINGS: &[&str] = &[
-    "",
-    "text",
-    "abcdef",
-];
+const EXAMPLE_STRINGS: &[&str] = &["", "text", "abcdef"];
+
+#[test]
+fn test_default() {
+    let string = String::default();
+    assert_eq!(string.string.len(), 0);
+    assert_eq!(string.offset, 0..0);
+}
+
+#[test]
+fn test_new() {
+    let string = String::new();
+    assert_eq!(string.string.len(), 0);
+    assert_eq!(string.offset, 0..0);
+}
 
 #[test]
 fn can_get_as_bytes() {

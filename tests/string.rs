@@ -1,4 +1,6 @@
 // Taken from https://github.com/rust-lang/rust/blob/master/library/alloc/tests/string.rs
+use imstr::String;
+use imstr::ToString;
 use std::borrow::Cow;
 use std::cell::Cell;
 use std::ops::Bound;
@@ -6,8 +8,6 @@ use std::ops::Bound::*;
 use std::ops::RangeBounds;
 use std::panic;
 use std::str;
-use imstr::String;
-use imstr::ToString;
 
 #[test]
 fn test_from_utf8() {
@@ -15,7 +15,10 @@ fn test_from_utf8() {
     assert_eq!(String::from_utf8(xs).unwrap(), String::from("hello"));
 
     let xs = "ศไทย中华Việt Nam".as_bytes().to_vec();
-    assert_eq!(String::from_utf8(xs).unwrap(), String::from("ศไทย中华Việt Nam"));
+    assert_eq!(
+        String::from_utf8(xs).unwrap(),
+        String::from("ศไทย中华Việt Nam")
+    );
 
     let xs = b"hello\xFF".to_vec();
     let err = String::from_utf8(xs).unwrap_err();
@@ -61,6 +64,46 @@ fn string_from_char_iter() {
     assert_eq!(&string, "hello");
 }
 
+#[test]
+fn test_add_assign() {
+    let mut s = String::new();
+    s += "";
+    assert_eq!(s.as_str(), "");
+    s += "abc";
+    assert_eq!(s.as_str(), "abc");
+    s += "ประเทศไทย中华Việt Nam";
+    assert_eq!(s.as_str(), "abcประเทศไทย中华Việt Nam");
+}
+
+#[test]
+fn test_from_char() {
+    assert_eq!(&String::from('a'), "a");
+    let s: String = 'x'.into();
+    assert_eq!(&s, "x");
+}
+
+#[test]
+fn test_str_concat() {
+    let a: String = "hello".into();
+    let b: String = "world".into();
+    let s: String = format!("{a}{b}").into();
+    assert_eq!(s.as_bytes()[9], 'd' as u8);
+}
+
+#[test]
+fn test_extend_char() {
+    let mut a: String = "foo".into();
+    a.extend(['b', 'a', 'r']);
+    assert_eq!(&a, "foobar");
+}
+
+#[test]
+fn test_extend_char_ref() {
+    let mut a: String = "foo".into();
+    a.extend(&['b', 'a', 'r']);
+    assert_eq!(&a, "foobar");
+}
+
 /*
 #[test]
 fn test_from_iterator() {
@@ -83,7 +126,6 @@ fn test_from_iterator() {
     assert_eq!(s, d);
 }
 */
-
 
 /*
 pub trait IntoCow<'a, B: ?Sized>
@@ -270,17 +312,6 @@ fn test_push_bytes() {
         mv.extend_from_slice(&[b'D']);
     }
     assert_eq!(s, "ABCD");
-}
-
-#[test]
-fn test_add_assign() {
-    let mut s = String::new();
-    s += "";
-    assert_eq!(s.as_str(), "");
-    s += "abc";
-    assert_eq!(s.as_str(), "abc");
-    s += "ประเทศไทย中华Việt Nam";
-    assert_eq!(s.as_str(), "abcประเทศไทย中华Việt Nam");
 }
 
 #[test]
@@ -628,14 +659,6 @@ fn test_replace_range_evil_end_bound() {
 }
 
 #[test]
-fn test_extend_ref() {
-    let mut a = "foo".to_string();
-    a.extend(&['b', 'a', 'r']);
-
-    assert_eq!(&a, "foobar");
-}
-
-#[test]
 fn test_into_boxed_str() {
     let xs = String::from("hello my name is bob");
     let ys = xs.into_boxed_str();
@@ -666,18 +689,4 @@ fn test_reserve_exact() {
     assert!(s.capacity() >= 33)
 }
 
-#[test]
-fn test_from_char() {
-    assert_eq!(String::from('a'), 'a'.to_string());
-    let s: String = 'x'.into();
-    assert_eq!(s, 'x'.to_string());
-}
-
-#[test]
-fn test_str_concat() {
-    let a: String = "hello".to_string();
-    let b: String = "world".to_string();
-    let s: String = format!("{a}{b}");
-    assert_eq!(s.as_bytes()[9], 'd' as u8);
-}
 */

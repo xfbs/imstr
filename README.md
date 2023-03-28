@@ -9,7 +9,7 @@ be sliced into a lot of substrings.
 
 ## Similar
 
-| Crate | Zero-Copy | Slicing | Modify | Compatible | Notes |
+| Crate | Zero-Copy | Slicing | Modify | String Compatible | Notes |
 | --- | --- | --- | --- | --- | --- |
 | [Tendril](https://crates.io/crates/tendril) | Yes | Yes | Yes | No | Complex implementation |
 | [Immut String](https://crates.io/crates/immut_string) | Yes | No | No |  | Simple |
