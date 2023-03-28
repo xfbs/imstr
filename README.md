@@ -11,11 +11,11 @@ be sliced into a lot of substrings.
 
 | Crate | Zero-Copy | Slicing | Modify | Compatible | Notes |
 | --- | --- | --- | --- | --- |
-[Tendril](https://crates.io/crates/tendril) | Yes | Yes | Yes | No | Complex implementation |
-[Immut String](https://crates.io/crates/immut_string) | Yes | No | No |  | Simple |
-[Immutable String](https://crates.io/crates/immutable_string) | No | No | No | | |
-[ArcCStr](https://crates.io/crates/arccstr) | Yes | No | No | | Not UTF-8 |
-[Implicit Clone](https://crates.io/crates/implicit-clone) | Yes | No | No | | |
+| [Tendril](https://crates.io/crates/tendril) | Yes | Yes | Yes | No | Complex implementation |
+| [Immut String](https://crates.io/crates/immut_string) | Yes | No | No |  | Simple |
+| [Immutable String](https://crates.io/crates/immutable_string) | No | No | No | | |
+| [ArcCStr](https://crates.io/crates/arccstr) | Yes | No | No | | Not UTF-8 |
+| [Implicit Clone](https://crates.io/crates/implicit-clone) | Yes | No | No | | |
 
 
 https://crates.io/crates/semistr
