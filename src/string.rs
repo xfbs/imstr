@@ -10,6 +10,9 @@ use std::hash::{Hash, Hasher};
 use std::iter::{FromIterator, Extend};
 pub use std::string::{FromUtf16Error, FromUtf8Error};
 
+/// Cheaply clonable and slicable UTF-8 string type.
+///
+/// It uses copy-on-write and reference counting to allow for efficient operations.
 #[derive(Clone, Debug)]
 pub struct String {
     /// Underlying string
@@ -19,38 +22,62 @@ pub struct String {
 }
 
 impl String {
-    fn as_bytes(&self) -> &[u8] {
+    /// Returns a byte slice of this string's contents.
+    ///
+    /// The inverse of this method is [from_utf8](String::from_utf8) or
+    /// [from_utf8_lossy](String::from_utf8_lossy).
+    pub fn as_bytes(&self) -> &[u8] {
         self.string.as_bytes()
     }
 
-    fn capacity(&self) -> usize {
+    /// Get the current capacity of the string.
+    pub fn capacity(&self) -> usize {
         self.string.capacity()
     }
 
-    fn from_std_string(string: StdString) -> Self {
+    /// Create a new String instance from a standard library [String](std::string::String).
+    pub fn from_std_string(string: StdString) -> Self {
         String {
             offset: 0..string.as_bytes().len(),
             string: Arc::new(string),
         }
     }
 
-    fn into_std_string(self) -> StdString {
-        self.as_str().to_string()
+    /// Convert this string into a standard library [String](std::string::String).
+    pub fn into_std_string(mut self) -> StdString {
+        if let Some(mut string) = Arc::get_mut(&mut self.string) {
+            std::mem::take(string)
+        } else {
+            StdString::clone(&self.string)
+        }
     }
 
+    /// Creates a new, empty String.
     pub fn new() -> Self {
         String::from_std_string(StdString::new())
     }
 
+    pub fn with_capacity(capacity: usize) -> Self {
+        String::from_std_string(StdString::with_capacity(capacity))
+    }
+
+    /// Converts a vector of bytes to a String.
     pub fn from_utf8(vec: Vec<u8>) -> Result<String, FromUtf8Error> {
         Ok(String::from_std_string(StdString::from_utf8(vec)?))
     }
 
+    /// Converts a slice of bytes to a string, including invalid characters.
     pub fn from_utf8_lossy(bytes: &[u8]) -> String {
         let string = StdString::from_utf8_lossy(bytes).into_owned();
         String::from_std_string(string)
     }
 
+    /// Converts a vector of bytes to a String.
+    pub unsafe fn from_utf8_unchecked(vec: Vec<u8>) -> String {
+        String::from_std_string(StdString::from_utf8_unchecked(vec))
+    }
+
+    /// Extracts a string slice containing the entire string.
     pub fn as_str(&self) -> &str {
         let slice = &self.string.as_bytes()[self.offset.start..self.offset.end];
         unsafe { std::str::from_utf8_unchecked(slice) }

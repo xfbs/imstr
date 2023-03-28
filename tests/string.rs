@@ -7,7 +7,7 @@ use std::ops::RangeBounds;
 use std::panic;
 use std::str;
 use imstr::String;
-use imstr::string::ToString;
+use imstr::ToString;
 
 #[test]
 fn test_from_utf8() {

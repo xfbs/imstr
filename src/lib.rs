@@ -5,9 +5,11 @@
 //! an Arc, and every instance contains a range into that String.  This allows for cloning and
 //! creating slices very cheaply.  This is especially useful for parsing operations, where a large
 //! string needs to be sliced into a lot of substrings.
-pub mod string;
-pub mod os_string;
-pub mod prelude;
+//!
+//! This crate is heavily inspired by the standard library's [String](std::string::String) type and
+//! the `bytes` crate's [Bytes](https://docs.rs/bytes/latest/bytes/struct.Bytes.html) type.
+mod string;
+mod os_string;
 
-pub use string::String;
-pub use os_string::OsString;
+pub use string::*;
+pub use os_string::*;
