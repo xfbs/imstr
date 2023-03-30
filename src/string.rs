@@ -1,24 +1,38 @@
+use std::borrow::{Borrow, BorrowMut, Cow};
 use std::cmp::Ordering;
-use std::convert::Infallible;
-use std::fmt::{Display, Error as FmtError, Formatter, Write};
+use std::convert::{AsMut, AsRef, Infallible};
+use std::ffi::OsStr;
+use std::fmt::{Debug, Display, Error as FmtError, Formatter, Write};
 use std::hash::{Hash, Hasher};
 use std::iter::{Extend, FromIterator};
-use std::ops::Range;
+use std::net::{SocketAddr, ToSocketAddrs};
 use std::ops::{Add, AddAssign, Deref};
+use std::ops::{Bound, Range, RangeBounds};
+use std::path::Path;
 use std::str::FromStr;
 pub use std::string::{FromUtf16Error, FromUtf8Error};
 use std::string::{String, ToString};
 use std::sync::Arc;
+use std::vec::IntoIter;
 
 /// Cheaply clonable and slicable UTF-8 string type.
 ///
 /// It uses copy-on-write and reference counting to allow for efficient operations.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct ImString {
     /// Underlying string
     string: Arc<String>,
     /// Offset, must always point to valid UTF-8 region inside string.
     offset: Range<usize>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SliceError {
+    StartOutOfBounds,
+    EndOutOfBounds,
+    EndBeforeStart,
+    StartNotAligned,
+    EndNotAligned,
 }
 
 impl ImString {
@@ -191,6 +205,118 @@ impl ImString {
             iterator: self.as_str().lines(),
         }
     }
+
+    pub fn try_slice(&self, range: impl RangeBounds<usize>) -> Result<ImString, SliceError> {
+        let start = match range.start_bound() {
+            Bound::Included(value) => *value,
+            Bound::Excluded(value) => *value + 1,
+            Bound::Unbounded => 0,
+        };
+        if start > self.offset.len() {
+            return Err(SliceError::StartOutOfBounds);
+        }
+        let end = match range.end_bound() {
+            Bound::Included(value) => *value - 1,
+            Bound::Excluded(value) => *value,
+            Bound::Unbounded => self.offset.len(),
+        };
+        if end < start {
+            return Err(SliceError::EndBeforeStart);
+        }
+        if end > self.offset.len() {
+            return Err(SliceError::EndOutOfBounds);
+        }
+        if !self.as_str().is_char_boundary(start) {
+            return Err(SliceError::StartNotAligned);
+        }
+        if !self.as_str().is_char_boundary(end) {
+            return Err(SliceError::EndNotAligned);
+        }
+        let slice = unsafe { self.slice_unchecked(range) };
+        Ok(slice)
+    }
+
+    pub unsafe fn slice_unchecked(&self, range: impl RangeBounds<usize>) -> ImString {
+        let start = match range.start_bound() {
+            Bound::Included(value) => *value,
+            Bound::Excluded(value) => *value + 1,
+            Bound::Unbounded => 0,
+        };
+        let end = match range.end_bound() {
+            Bound::Included(value) => *value - 1,
+            Bound::Excluded(value) => *value,
+            Bound::Unbounded => self.offset.len(),
+        };
+        let offset = self.offset.start + start..self.offset.start + end;
+        ImString {
+            string: self.string.clone(),
+            offset,
+        }
+    }
+}
+
+#[test]
+fn can_try_slice() {
+    let string = ImString::from("string");
+
+    // get all
+    assert_eq!(string.try_slice(..).unwrap(), "string");
+
+    // slice from left
+    assert_eq!(string.try_slice(0..).unwrap(), "string");
+    assert_eq!(string.try_slice(1..).unwrap(), "tring");
+    assert_eq!(string.try_slice(2..).unwrap(), "ring");
+    assert_eq!(string.try_slice(3..).unwrap(), "ing");
+    assert_eq!(string.try_slice(4..).unwrap(), "ng");
+    assert_eq!(string.try_slice(5..).unwrap(), "g");
+    assert_eq!(string.try_slice(6..).unwrap(), "");
+
+    // slice from right
+    assert_eq!(string.try_slice(..6).unwrap(), "string");
+    assert_eq!(string.try_slice(..5).unwrap(), "strin");
+    assert_eq!(string.try_slice(..4).unwrap(), "stri");
+    assert_eq!(string.try_slice(..3).unwrap(), "str");
+    assert_eq!(string.try_slice(..2).unwrap(), "st");
+    assert_eq!(string.try_slice(..1).unwrap(), "s");
+    assert_eq!(string.try_slice(..0).unwrap(), "");
+
+    // subslice
+    let string = string.try_slice(1..5).unwrap();
+    assert_eq!(string, "trin");
+    assert_eq!(string.try_slice(..).unwrap(), "trin");
+
+    // subslice from left
+    assert_eq!(string.try_slice(0..).unwrap(), "trin");
+    assert_eq!(string.try_slice(1..).unwrap(), "rin");
+    assert_eq!(string.try_slice(2..).unwrap(), "in");
+    assert_eq!(string.try_slice(3..).unwrap(), "n");
+    assert_eq!(string.try_slice(4..).unwrap(), "");
+
+    // subslice from right
+    assert_eq!(string.try_slice(..4).unwrap(), "trin");
+    assert_eq!(string.try_slice(..3).unwrap(), "tri");
+    assert_eq!(string.try_slice(..2).unwrap(), "tr");
+    assert_eq!(string.try_slice(..1).unwrap(), "t");
+    assert_eq!(string.try_slice(..0).unwrap(), "");
+
+    assert_eq!(string.try_slice(1..7), Err(SliceError::EndOutOfBounds));
+    assert_eq!(string.try_slice(5..7), Err(SliceError::StartOutOfBounds));
+    assert_eq!(string.try_slice(3..1), Err(SliceError::EndBeforeStart));
+
+    // a umlaut, o umlaut, u umlaut.
+    let string = ImString::from("\u{61}\u{308}\u{6f}\u{308}\u{75}\u{308}");
+
+    assert_eq!(string, string);
+    assert_eq!(string.try_slice(..).unwrap(), string);
+    assert_eq!(string.try_slice(0..1).unwrap(), &string.as_str()[0..1]);
+    assert_eq!(string.try_slice(0..2), Err(SliceError::EndNotAligned));
+    assert_eq!(string.try_slice(0..3).unwrap(), &string.as_str()[0..3]);
+    assert_eq!(string.try_slice(0..4).unwrap(), &string.as_str()[0..4]);
+    assert_eq!(string.try_slice(0..5), Err(SliceError::EndNotAligned));
+    assert_eq!(string.try_slice(0..6).unwrap(), &string.as_str()[0..6]);
+    assert_eq!(string.try_slice(0..7).unwrap(), &string.as_str()[0..7]);
+    assert_eq!(string.try_slice(0..8), Err(SliceError::EndNotAligned));
+    assert_eq!(string.try_slice(0..9).unwrap(), &string.as_str()[0..9]);
 }
 
 pub type Lines<'a> = ImStringIterator<'a, std::str::Lines<'a>>;
@@ -199,6 +325,18 @@ pub type Lines<'a> = ImStringIterator<'a, std::str::Lines<'a>>;
 impl PartialEq<str> for ImString {
     fn eq(&self, other: &str) -> bool {
         self.as_str().eq(other)
+    }
+}
+
+impl<'a> PartialEq<&'a str> for ImString {
+    fn eq(&self, other: &&'a str) -> bool {
+        self.as_str().eq(*other)
+    }
+}
+
+impl PartialEq<String> for ImString {
+    fn eq(&self, other: &String) -> bool {
+        self.as_str().eq(other.as_str())
     }
 }
 
@@ -213,6 +351,12 @@ impl PartialEq<ImString> for ImString {
 impl PartialOrd<ImString> for ImString {
     fn partial_cmp(&self, other: &ImString) -> Option<Ordering> {
         self.as_str().partial_cmp(other.as_str())
+    }
+}
+
+impl Ord for ImString {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.as_str().cmp(other.as_str())
     }
 }
 
@@ -260,13 +404,25 @@ impl From<ImString> for String {
     }
 }
 
+impl<'a> From<Cow<'a, str>> for ImString {
+    fn from(string: Cow<'a, str>) -> ImString {
+        ImString::from(string.into_owned())
+    }
+}
+
 pub trait ToImString {
     fn to_im_string(&self) -> ImString;
 }
 
 impl Display for ImString {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> Result<(), FmtError> {
-        self.as_str().fmt(formatter)
+        Display::fmt(self.as_str(), formatter)
+    }
+}
+
+impl Debug for ImString {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+        Debug::fmt(self.as_str(), f)
     }
 }
 
@@ -362,6 +518,22 @@ impl FromIterator<char> for ImString {
     }
 }
 
+impl<'a> FromIterator<&'a char> for ImString {
+    fn from_iter<T: IntoIterator<Item = &'a char>>(iter: T) -> Self {
+        let mut string = ImString::new();
+        string.extend(iter);
+        string
+    }
+}
+
+impl<'a> FromIterator<&'a str> for ImString {
+    fn from_iter<T: IntoIterator<Item = &'a str>>(iter: T) -> Self {
+        let mut string = ImString::new();
+        string.extend(iter);
+        string
+    }
+}
+
 impl Add<&str> for ImString {
     type Output = ImString;
     fn add(mut self, string: &str) -> Self::Output {
@@ -385,6 +557,49 @@ impl<'a, I: Iterator<Item = &'a str>> Iterator for ImStringIterator<'a, I> {
     type Item = ImString;
     fn next(&mut self) -> Option<Self::Item> {
         todo!()
+    }
+}
+
+impl AsRef<str> for ImString {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl AsRef<Path> for ImString {
+    fn as_ref(&self) -> &Path {
+        self.as_str().as_ref()
+    }
+}
+
+impl AsRef<OsStr> for ImString {
+    fn as_ref(&self) -> &OsStr {
+        self.as_str().as_ref()
+    }
+}
+
+impl AsRef<[u8]> for ImString {
+    fn as_ref(&self) -> &[u8] {
+        self.as_str().as_ref()
+    }
+}
+
+impl AsRef<String> for ImString {
+    fn as_ref(&self) -> &String {
+        self.string.as_ref()
+    }
+}
+
+impl Borrow<str> for ImString {
+    fn borrow(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl ToSocketAddrs for ImString {
+    type Iter = <String as ToSocketAddrs>::Iter;
+    fn to_socket_addrs(&self) -> std::io::Result<<String as ToSocketAddrs>::Iter> {
+        self.string.to_socket_addrs()
     }
 }
 

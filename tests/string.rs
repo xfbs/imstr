@@ -151,28 +151,32 @@ fn insert_bad2() {
     "ệ".to_string().insert(1, 't');
 }
 
-/*
 #[test]
 fn test_from_iterator() {
-    let s = "ศไทย中华Việt Nam".to_string();
+    let s = "ศไทย中华Việt Nam".to_im_string();
     let t = "ศไทย中华";
     let u = "Việt Nam";
 
     let a: ImString = s.chars().collect();
     assert_eq!(s, a);
 
-    let mut b = t.to_string();
+    let mut b = t.to_im_string();
     b.extend(u.chars());
     assert_eq!(s, b);
 
     let c: ImString = [t, u].into_iter().collect();
     assert_eq!(s, c);
 
-    let mut d = t.to_string();
+    let mut d = t.to_im_string();
     d.extend(vec![u]);
     assert_eq!(s, d);
 }
-*/
+
+#[test]
+fn test_from_cow_str() {
+    assert_eq!(ImString::from(Cow::Borrowed("string")), "string");
+    assert_eq!(ImString::from(Cow::Owned(String::from("string"))), "string");
+}
 
 /*
 pub trait IntoCow<'a, B: ?Sized>
@@ -194,11 +198,6 @@ impl<'a> IntoCow<'a, str> for &'a str {
     }
 }
 
-#[test]
-fn test_from_cow_str() {
-    assert_eq!(ImString::from(Cow::Borrowed("string")), "string");
-    assert_eq!(ImString::from(Cow::Owned(ImString::from("string"))), "string");
-}
 
 
 
