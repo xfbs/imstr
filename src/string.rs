@@ -7,7 +7,7 @@ use std::ops::Range;
 use std::ops::{Add, AddAssign, Deref};
 use std::str::FromStr;
 pub use std::string::{FromUtf16Error, FromUtf8Error};
-use std::string::{String, ToString as StdToString};
+use std::string::{String, ToString};
 use std::sync::Arc;
 
 /// Cheaply clonable and slicable UTF-8 string type.
@@ -172,7 +172,29 @@ impl ImString {
     pub fn is_empty(&self) -> bool {
         self.offset.is_empty()
     }
+
+    /// An iterator over the lines of a string.
+    ///
+    /// Lines are split at line endings that are either newlines (`\n`) or sequences of a carriage
+    /// return followed by a line feed (`\r\n`).
+    ///
+    /// Line terminators are not included in the lines returned by the iterator.
+    ///
+    /// The final line ending is optional. A string that ends with a final line ending will return
+    /// the same lines as an otherwise identical string without a final line ending.
+    ///
+    /// This works the same way as [String::lines](std::string::String::lines), except that it
+    /// returns ImString instances.
+    pub fn lines(&self) -> Lines<'_> {
+        ImStringIterator {
+            string: self.string.clone(),
+            iterator: self.as_str().lines(),
+        }
+    }
 }
+
+pub type Lines<'a> = ImStringIterator<'a, std::str::Lines<'a>>;
+//pub type Split<'a> = ImStringIterator<'a, std::str::Split<'a>>;
 
 impl PartialEq<str> for ImString {
     fn eq(&self, other: &str) -> bool {
@@ -351,6 +373,18 @@ impl Add<&str> for ImString {
 impl AddAssign<&str> for ImString {
     fn add_assign(&mut self, string: &str) {
         self.push_str(string);
+    }
+}
+
+pub struct ImStringIterator<'a, I: Iterator<Item = &'a str>> {
+    string: Arc<String>,
+    iterator: I,
+}
+
+impl<'a, I: Iterator<Item = &'a str>> Iterator for ImStringIterator<'a, I> {
+    type Item = ImString;
+    fn next(&mut self) -> Option<Self::Item> {
+        todo!()
     }
 }
 
