@@ -132,7 +132,7 @@ fn test_str_add() {
 
 #[test]
 fn insert() {
-    let mut s = "foobar".to_string();
+    let mut s = "foobar".to_im_string();
     s.insert(0, 'ệ');
     assert_eq!(s, "ệfoobar");
     s.insert(6, 'ย');
@@ -142,13 +142,34 @@ fn insert() {
 #[test]
 #[should_panic]
 fn insert_bad1() {
-    "".to_string().insert(1, 't');
+    "".to_im_string().insert(1, 't');
 }
 
 #[test]
 #[should_panic]
 fn insert_bad2() {
-    "ệ".to_string().insert(1, 't');
+    "ệ".to_im_string().insert(1, 't');
+}
+
+#[test]
+fn insert_str() {
+    let mut s = "foobar".to_im_string();
+    s.insert_str(0, "ệ");
+    assert_eq!(s, "ệfoobar");
+    s.insert_str(6, "ย");
+    assert_eq!(s, "ệfooยbar");
+}
+
+#[test]
+#[should_panic]
+fn insert_str_bad1() {
+    "".to_im_string().insert_str(1, "test");
+}
+
+#[test]
+#[should_panic]
+fn insert_str_bad2() {
+    "ệ".to_im_string().insert_str(1, "test");
 }
 
 #[test]
@@ -176,6 +197,60 @@ fn test_from_iterator() {
 fn test_from_cow_str() {
     assert_eq!(ImString::from(Cow::Borrowed("string")), "string");
     assert_eq!(ImString::from(Cow::Owned(String::from("string"))), "string");
+}
+
+#[test]
+fn test_unsized_to_string() {
+    let s: &str = "abc";
+    let _: ImString = (*s).to_im_string();
+}
+
+#[test]
+fn test_split_off_empty() {
+    let orig = "Hello, world!";
+    let mut split = ImString::from(orig);
+    let empty: ImString = split.split_off(orig.len());
+    assert!(empty.is_empty());
+}
+
+#[test]
+#[should_panic]
+fn test_split_off_past_end() {
+    let orig = "Hello, world!";
+    let mut split = ImString::from(orig);
+    let _ = split.split_off(orig.len() + 1);
+}
+
+#[test]
+#[should_panic]
+fn test_split_off_mid_char() {
+    let mut shan = ImString::from("山");
+    let _broken_mountain = shan.split_off(1);
+}
+
+#[test]
+fn test_split_off_ascii() {
+    let mut ab = ImString::from("ABCD");
+    let cd = ab.split_off(2);
+    assert_eq!(ab, "AB");
+    assert_eq!(cd, "CD");
+}
+
+#[test]
+fn test_split_off_unicode() {
+    let mut nihon = ImString::from("日本語");
+    let go = nihon.split_off("日本".len());
+    assert_eq!(nihon, "日本");
+    assert_eq!(go, "語");
+}
+
+#[test]
+fn test_lines() {
+    let input = "data\nline\r\nabc\n\ndef\n";
+    let string = ImString::from(input);
+    for (left, right) in string.lines().zip(input.lines()) {
+        assert_eq!(left, right);
+    }
 }
 
 /*
@@ -255,11 +330,6 @@ fn test_from_utf8_lossy() {
     );
 }
 
-#[test]
-fn test_unsized_to_string() {
-    let s: &str = "abc";
-    let _: ImString = (*s).to_string();
-}
 
 
 #[test]
@@ -369,49 +439,6 @@ fn test_pop() {
     assert_eq!(data.pop().unwrap(), 'b'); // 1 bytes
     assert_eq!(data.pop().unwrap(), '华');
     assert_eq!(data, "ประเทศไทย中");
-}
-
-#[test]
-fn test_split_off_empty() {
-    let orig = "Hello, world!";
-    let mut split = ImString::from(orig);
-    let empty: ImString = split.split_off(orig.len());
-    assert!(empty.is_empty());
-}
-
-#[test]
-#[should_panic]
-fn test_split_off_past_end() {
-    let orig = "Hello, world!";
-    let mut split = ImString::from(orig);
-    let _ = split.split_off(orig.len() + 1);
-}
-
-#[test]
-#[should_panic]
-fn test_split_off_mid_char() {
-    let mut shan = ImString::from("山");
-    let _broken_mountain = shan.split_off(1);
-}
-
-#[test]
-fn test_split_off_ascii() {
-    let mut ab = ImString::from("ABCD");
-    let orig_capacity = ab.capacity();
-    let cd = ab.split_off(2);
-    assert_eq!(ab, "AB");
-    assert_eq!(cd, "CD");
-    assert_eq!(ab.capacity(), orig_capacity);
-}
-
-#[test]
-fn test_split_off_unicode() {
-    let mut nihon = ImString::from("日本語");
-    let orig_capacity = nihon.capacity();
-    let go = nihon.split_off("日本".len());
-    assert_eq!(nihon, "日本");
-    assert_eq!(go, "語");
-    assert_eq!(nihon.capacity(), orig_capacity);
 }
 
 #[test]

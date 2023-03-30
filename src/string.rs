@@ -35,6 +35,32 @@ pub enum SliceError {
     EndNotAligned,
 }
 
+#[test]
+fn slice_error() {
+    let error = SliceError::StartOutOfBounds;
+    error.clone();
+    format!("{error:?}");
+}
+
+fn slice_ptr_range(slice: &[u8]) -> Range<*const u8> {
+    let start = slice.as_ptr();
+    let end = unsafe { start.add(slice.len()) };
+    start..end
+}
+
+fn try_slice_offset(current: &[u8], candidate: &[u8]) -> Option<Range<usize>> {
+    let current_slice = slice_ptr_range(current);
+    let candidate_slice = slice_ptr_range(candidate);
+    let contains_start = current_slice.start <= candidate_slice.start;
+    let contains_end = current_slice.end >= candidate_slice.end;
+    if !contains_start || !contains_end {
+        return None;
+    }
+    let offset_start = unsafe { candidate_slice.start.offset_from(current_slice.start) } as usize;
+    let offset_end = unsafe { candidate_slice.end.offset_from(current_slice.start) } as usize;
+    Some(offset_start..offset_end)
+}
+
 impl ImString {
     /// Returns a byte slice of this string's contents.
     ///
@@ -77,10 +103,18 @@ impl ImString {
 
     /// Convert this string into a standard library [String](std::string::String).
     pub fn into_std_string(mut self) -> String {
+        if self.offset.start != 0 {
+            return self.as_str().to_string();
+        }
+
         if let Some(mut string) = Arc::get_mut(&mut self.string) {
+            if string.len() != self.offset.end {
+                string.truncate(self.offset.end);
+            }
+
             std::mem::take(string)
         } else {
-            String::clone(&self.string)
+            self.as_str().to_string()
         }
     }
 
@@ -206,6 +240,14 @@ impl ImString {
         }
     }
 
+    /// Create a subslice of this string.
+    ///
+    /// This will panic if the specified range is invalid. Use the [try_slice](ImString::try_slice)
+    /// method if you want to handle invalid ranges.
+    pub fn slice(&self, range: impl RangeBounds<usize>) -> ImString {
+        self.try_slice(range).unwrap()
+    }
+
     pub fn try_slice(&self, range: impl RangeBounds<usize>) -> Result<ImString, SliceError> {
         let start = match range.start_bound() {
             Bound::Included(value) => *value,
@@ -252,6 +294,47 @@ impl ImString {
             string: self.string.clone(),
             offset,
         }
+    }
+
+    pub fn try_str_ref(&self, string: &str) -> Option<Self> {
+        self.try_slice_ref(string.as_bytes())
+    }
+
+    pub fn str_ref(&self, string: &str) -> Self {
+        self.try_str_ref(string).unwrap()
+    }
+
+    pub fn try_slice_ref(&self, slice: &[u8]) -> Option<Self> {
+        try_slice_offset(self.string.as_bytes(), slice).map(|range| ImString {
+            offset: range,
+            ..self.clone()
+        })
+    }
+
+    pub fn slice_ref(&self, slice: &[u8]) -> Self {
+        self.try_slice_ref(slice).unwrap()
+    }
+
+    pub fn try_split_off(&mut self, position: usize) -> Option<Self> {
+        if position > self.offset.end {
+            return None;
+        }
+
+        if !self.as_str().is_char_boundary(position) {
+            return None;
+        }
+
+        let new = ImString {
+            offset: position..self.offset.end,
+            ..self.clone()
+        };
+
+        self.offset.end = position;
+        Some(new)
+    }
+
+    pub fn split_off(&mut self, position: usize) -> Self {
+        self.try_split_off(position).unwrap()
     }
 }
 
@@ -317,6 +400,60 @@ fn can_try_slice() {
     assert_eq!(string.try_slice(0..7).unwrap(), &string.as_str()[0..7]);
     assert_eq!(string.try_slice(0..8), Err(SliceError::EndNotAligned));
     assert_eq!(string.try_slice(0..9).unwrap(), &string.as_str()[0..9]);
+}
+
+#[test]
+fn can_slice_ref() {
+    let string = ImString::from("string");
+    let slice = string.slice(5..);
+
+    // cannot get slice of non-existing
+    assert_eq!(string.try_str_ref("x"), None);
+    assert_eq!(slice.try_str_ref("x"), None);
+
+    assert_eq!(
+        string.try_str_ref(&string.as_str()).unwrap(),
+        string.as_str()
+    );
+    assert_eq!(
+        string.try_str_ref(&string.as_str()[1..]).unwrap(),
+        string.as_str()[1..]
+    );
+    assert_eq!(
+        string.try_str_ref(&string.as_str()[2..]).unwrap(),
+        string.as_str()[2..]
+    );
+    assert_eq!(
+        string.try_str_ref(&string.as_str()[3..]).unwrap(),
+        string.as_str()[3..]
+    );
+    assert_eq!(
+        string.try_str_ref(&string.as_str()[4..]).unwrap(),
+        string.as_str()[4..]
+    );
+    assert_eq!(
+        string.try_str_ref(&string.as_str()[5..]).unwrap(),
+        string.as_str()[5..]
+    );
+    assert_eq!(
+        string.try_str_ref(&string.as_str()[6..]).unwrap(),
+        string.as_str()[6..]
+    );
+}
+
+#[test]
+fn can_into_std_string() {
+    let string = ImString::from("long string");
+    assert_eq!(string.into_std_string(), "long string");
+
+    let string = ImString::from("long string");
+    let string = string.slice(5..);
+    assert_eq!(string.into_std_string(), "string");
+
+    let original = ImString::from("long string");
+    let string = original.slice(5..);
+    drop(original);
+    assert_eq!(string.into_std_string(), "string");
 }
 
 pub type Lines<'a> = ImStringIterator<'a, std::str::Lines<'a>>;
@@ -444,6 +581,12 @@ impl ToImString for &str {
     }
 }
 
+impl ToImString for str {
+    fn to_im_string(&self) -> ImString {
+        self.to_string().into()
+    }
+}
+
 impl Write for ImString {
     fn write_str(&mut self, string: &str) -> Result<(), FmtError> {
         self.push_str(string);
@@ -556,7 +699,16 @@ pub struct ImStringIterator<'a, I: Iterator<Item = &'a str>> {
 impl<'a, I: Iterator<Item = &'a str>> Iterator for ImStringIterator<'a, I> {
     type Item = ImString;
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        match self.iterator.next() {
+            Some(slice) => {
+                let offset = try_slice_offset(self.string.as_bytes(), slice.as_bytes()).unwrap();
+                Some(ImString {
+                    string: self.string.clone(),
+                    offset,
+                })
+            },
+            None => None,
+        }
     }
 }
 
