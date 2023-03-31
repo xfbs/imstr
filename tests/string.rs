@@ -10,6 +10,41 @@ use std::ops::Bound::*;
 use std::ops::RangeBounds;
 use std::panic;
 use std::str;
+use std::str::FromStr;
+
+#[cfg(test)]
+const EXAMPLE_STRINGS: &[&str] = &["", "text", "abcdef"];
+
+#[test]
+fn test_default() {
+    let string = ImString::default();
+    assert_eq!(string, "");
+    assert_eq!(string.len(), 0);
+}
+
+#[test]
+fn test_new() {
+    let string = ImString::new();
+    assert_eq!(string, "");
+    assert_eq!(string.len(), 0);
+}
+
+#[test]
+fn can_get_as_bytes() {
+    for input in EXAMPLE_STRINGS.into_iter() {
+        let string = ImString::from_std_string((*input).into());
+        assert_eq!(string.as_bytes(), input.as_bytes());
+    }
+}
+
+#[test]
+fn can_deref() {
+    for input in EXAMPLE_STRINGS.into_iter() {
+        let string = ImString::from_std_string((*input).into());
+        let string_slice: &str = &string;
+        assert_eq!(&string_slice, input);
+    }
+}
 
 #[test]
 fn hash() {
@@ -53,6 +88,10 @@ fn test_push_str() {
 fn test_from_str() {
     let owned: Option<ImString> = "string".parse().ok();
     assert_eq!(owned.as_ref().map(|s| &**s), Some("string"));
+
+    let input = "test";
+    let string = ImString::from_str(input).unwrap();
+    assert_eq!(&string, input);
 }
 
 #[test]

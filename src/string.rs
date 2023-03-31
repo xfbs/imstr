@@ -6,8 +6,10 @@ use std::fmt::{Debug, Display, Error as FmtError, Formatter, Write};
 use std::hash::{Hash, Hasher};
 use std::iter::{Extend, FromIterator};
 use std::net::{SocketAddr, ToSocketAddrs};
-use std::ops::{Add, AddAssign, Deref};
-use std::ops::{Bound, Range, RangeBounds};
+use std::ops::{
+    Add, AddAssign, Bound, Deref, Index, IndexMut, Range, RangeBounds, RangeFrom, RangeFull,
+    RangeInclusive, RangeTo,
+};
 use std::path::Path;
 use std::str::FromStr;
 pub use std::string::{FromUtf16Error, FromUtf8Error};
@@ -163,8 +165,8 @@ impl ImString {
             let string: String = std::mem::take(&mut string_ref);
             *string_ref = f(string);
         } else {
-            let string = String::clone(&self.string);
-            self.string = Arc::new(f(string));
+            self.string = Arc::new(f(self.as_str().to_string()));
+            self.offset.start = 0;
         }
 
         self.offset.end = self.string.as_bytes().len();
@@ -180,6 +182,14 @@ impl ImString {
                 string
             });
         }
+    }
+
+    pub fn raw_string(&self) -> Arc<String> {
+        self.string.clone()
+    }
+
+    pub fn raw_offset(&self) -> Range<usize> {
+        self.offset.clone()
     }
 
     pub fn insert_str(&mut self, index: usize, s: &str) {
@@ -587,6 +597,47 @@ impl ToImString for str {
     }
 }
 
+impl<'a> ToImString for Cow<'a, str> {
+    fn to_im_string(&self) -> ImString {
+        self.to_string().into()
+    }
+}
+
+impl Index<Range<usize>> for ImString {
+    type Output = str;
+    fn index(&self, index: Range<usize>) -> &str {
+        &self.string[index]
+    }
+}
+
+impl Index<RangeFrom<usize>> for ImString {
+    type Output = str;
+    fn index(&self, index: RangeFrom<usize>) -> &str {
+        &self.string[index]
+    }
+}
+
+impl Index<RangeFull> for ImString {
+    type Output = str;
+    fn index(&self, index: RangeFull) -> &str {
+        &self.string[index]
+    }
+}
+
+impl Index<RangeInclusive<usize>> for ImString {
+    type Output = str;
+    fn index(&self, index: RangeInclusive<usize>) -> &str {
+        &self.string[index]
+    }
+}
+
+impl Index<RangeTo<usize>> for ImString {
+    type Output = str;
+    fn index(&self, index: RangeTo<usize>) -> &str {
+        &self.string[index]
+    }
+}
+
 impl Write for ImString {
     fn write_str(&mut self, string: &str) -> Result<(), FmtError> {
         self.push_str(string);
@@ -604,13 +655,6 @@ impl FromStr for ImString {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(ImString::from(s))
     }
-}
-
-#[test]
-fn can_from_str() {
-    let input = "test";
-    let string = ImString::from_str(input).unwrap();
-    assert_eq!(&string, input);
 }
 
 // Delegate hash to contained string
@@ -706,7 +750,7 @@ impl<'a, I: Iterator<Item = &'a str>> Iterator for ImStringIterator<'a, I> {
                     string: self.string.clone(),
                     offset,
                 })
-            },
+            }
             None => None,
         }
     }
@@ -755,9 +799,6 @@ impl ToSocketAddrs for ImString {
     }
 }
 
-#[cfg(test)]
-const EXAMPLE_STRINGS: &[&str] = &["", "text", "abcdef"];
-
 #[test]
 fn test_default() {
     let string = ImString::default();
@@ -772,19 +813,22 @@ fn test_new() {
     assert_eq!(string.offset, 0..0);
 }
 
-#[test]
-fn can_get_as_bytes() {
-    for input in EXAMPLE_STRINGS.into_iter() {
-        let string = ImString::from_std_string((*input).into());
-        assert_eq!(string.as_bytes(), input.as_bytes());
+#[cfg(feature = "serde")]
+impl serde::Serialize for ImString {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
     }
 }
 
-#[test]
-fn can_deref() {
-    for input in EXAMPLE_STRINGS.into_iter() {
-        let string = ImString::from_std_string((*input).into());
-        let string_slice: &str = &string;
-        assert_eq!(&string_slice, input);
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for ImString {
+    fn deserialize<D>(deserializer: D) -> Result<ImString, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        String::deserialize(deserializer).map(ImString::from)
     }
 }
