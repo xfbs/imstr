@@ -6,10 +6,7 @@ use std::fmt::{Debug, Display, Error as FmtError, Formatter, Write};
 use std::hash::{Hash, Hasher};
 use std::iter::{Extend, FromIterator};
 use std::net::{SocketAddr, ToSocketAddrs};
-use std::ops::{
-    Add, AddAssign, Bound, Deref, Index, IndexMut, Range, RangeBounds, RangeFrom, RangeFull,
-    RangeInclusive, RangeTo,
-};
+use std::ops::{Add, AddAssign, Deref, Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeTo, RangeInclusive, Index, IndexMut};
 use std::path::Path;
 use std::str::FromStr;
 pub use std::string::{FromUtf16Error, FromUtf8Error};
@@ -68,6 +65,14 @@ impl ImString {
     ///
     /// The inverse of this method is [from_utf8](ImString::from_utf8) or
     /// [from_utf8_lossy](ImString::from_utf8_lossy).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("hello");
+    /// assert_eq!(string.as_bytes(), b"hello");
+    /// ```
     pub fn as_bytes(&self) -> &[u8] {
         self.string.as_bytes()
     }
@@ -89,6 +94,16 @@ impl ImString {
     ///
     /// If this is the only reference to the string, it will clear the backing
     /// [String](std::string::String). If it is not, it only sets the offset to an empty slice.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let mut string = ImString::from("hello");
+    /// assert_eq!(string, "hello");
+    /// string.clear();
+    /// assert_eq!(string, "");
+    /// ```
     pub fn clear(&mut self) {
         unsafe {
             self.try_modify_unchecked(|string| string.clear());
@@ -99,6 +114,14 @@ impl ImString {
     /// Returns the length of the string in bytes.
     ///
     /// This will not return the length in bytes or graphemes.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("hello");
+    /// assert_eq!(string.len(), "hello".len());
+    /// ```
     pub fn len(&self) -> usize {
         self.offset.len()
     }
@@ -121,10 +144,27 @@ impl ImString {
     }
 
     /// Creates a new, empty ImString.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::new();
+    /// assert_eq!(string, "");
+    /// ```
     pub fn new() -> Self {
         ImString::from_std_string(String::new())
     }
 
+    /// Creates a new string with the given capacity.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let mut string = ImString::with_capacity(10);
+    /// assert_eq!(string.capacity(), 10);
+    /// ```
     pub fn with_capacity(capacity: usize) -> Self {
         ImString::from_std_string(String::with_capacity(capacity))
     }
@@ -146,6 +186,14 @@ impl ImString {
     }
 
     /// Extracts a string slice containing the entire string.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("hello");
+    /// assert_eq!(string.as_str(), "hello");
+    /// ```
     pub fn as_str(&self) -> &str {
         let slice = &self.string.as_bytes()[self.offset.start..self.offset.end];
         unsafe { std::str::from_utf8_unchecked(slice) }
@@ -192,6 +240,18 @@ impl ImString {
         self.offset.clone()
     }
 
+    /// Inserts a string into this string at the specified index.
+    ///
+    /// This is an *O(n)$ operation as it requires copying every element in the buffer.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let mut string = ImString::from("Hello!");
+    /// string.insert_str(5, ", World");
+    /// assert_eq!(string, "Hello, World!");
+    /// ```
     pub fn insert_str(&mut self, index: usize, s: &str) {
         unsafe {
             self.unchecked_append(|mut string| {
@@ -227,6 +287,18 @@ impl ImString {
         }
     }
 
+    /// Returns `true` if this string has a length of zero, and `false` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("");
+    /// assert_eq!(string.is_empty(), true);
+    ///
+    /// let string = ImString::from("hello");
+    /// assert_eq!(string.is_empty(), false);
+    /// ```
     pub fn is_empty(&self) -> bool {
         self.offset.is_empty()
     }
@@ -750,7 +822,7 @@ impl<'a, I: Iterator<Item = &'a str>> Iterator for ImStringIterator<'a, I> {
                     string: self.string.clone(),
                     offset,
                 })
-            }
+            },
             None => None,
         }
     }
@@ -815,20 +887,14 @@ fn test_new() {
 
 #[cfg(feature = "serde")]
 impl serde::Serialize for ImString {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
         serializer.serialize_str(self.as_str())
     }
 }
 
 #[cfg(feature = "serde")]
 impl<'de> serde::Deserialize<'de> for ImString {
-    fn deserialize<D>(deserializer: D) -> Result<ImString, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
+    fn deserialize<D>(deserializer: D) -> Result<ImString, D::Error> where D: serde::Deserializer<'de> {
         String::deserialize(deserializer).map(ImString::from)
     }
 }
