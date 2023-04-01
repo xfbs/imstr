@@ -9,10 +9,21 @@ use std::net::{SocketAddr, ToSocketAddrs};
 use std::ops::{Add, AddAssign, Deref, Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeTo, RangeInclusive, Index, IndexMut};
 use std::path::Path;
 use std::str::FromStr;
-pub use std::string::{FromUtf16Error, FromUtf8Error};
 use std::string::{String, ToString};
 use std::sync::Arc;
 use std::vec::IntoIter;
+use crate::data::Data;
+use std::rc::Rc;
+use crate::error::*;
+
+/// Threadsafe shared storage for string.
+pub type Threadsafe = Arc<String>;
+
+/// Non-threadsafe shared storage for string.
+pub type Local = Rc<String>;
+
+/// Non-shared storage for string.
+pub type Cloned = crate::data::Cloned<String>;
 
 /// Cheaply cloneable and sliceable UTF-8 string type.
 ///
@@ -62,22 +73,6 @@ pub struct ImString {
     string: Arc<String>,
     /// Offset, must always point to valid UTF-8 region inside string.
     offset: Range<usize>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SliceError {
-    StartOutOfBounds,
-    EndOutOfBounds,
-    EndBeforeStart,
-    StartNotAligned,
-    EndNotAligned,
-}
-
-#[test]
-fn slice_error() {
-    let error = SliceError::StartOutOfBounds;
-    error.clone();
-    format!("{error:?}");
 }
 
 fn slice_ptr_range(slice: &[u8]) -> Range<*const u8> {
