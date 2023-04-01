@@ -1,5 +1,6 @@
-use std::rc::Rc;
-use std::sync::Arc;
+pub use std::boxed::Box;
+pub use std::rc::Rc;
+pub use std::sync::Arc;
 
 /// Set of common operations on shared data.
 ///
@@ -150,7 +151,7 @@ impl<T: Clone> Data<T> for Box<T> {
     }
 }
 
-/// Data which is simply cloned.
+/// Container for data which is not actually shared, but is cloned.
 #[derive(Clone)]
 pub struct Cloned<T>(T);
 
