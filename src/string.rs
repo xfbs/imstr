@@ -1,3 +1,5 @@
+use crate::data::Data;
+use crate::error::*;
 use std::borrow::{Borrow, BorrowMut, Cow};
 use std::cmp::Ordering;
 use std::convert::{AsMut, AsRef, Infallible};
@@ -6,15 +8,16 @@ use std::fmt::{Debug, Display, Error as FmtError, Formatter, Write};
 use std::hash::{Hash, Hasher};
 use std::iter::{Extend, FromIterator};
 use std::net::{SocketAddr, ToSocketAddrs};
-use std::ops::{Add, AddAssign, Deref, Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeTo, RangeInclusive, Index, IndexMut};
+use std::ops::{
+    Add, AddAssign, Bound, Deref, Index, IndexMut, Range, RangeBounds, RangeFrom, RangeFull,
+    RangeInclusive, RangeTo,
+};
 use std::path::Path;
+use std::rc::Rc;
 use std::str::FromStr;
 use std::string::{String, ToString};
 use std::sync::Arc;
 use std::vec::IntoIter;
-use crate::data::Data;
-use std::rc::Rc;
-use crate::error::*;
 
 /// Threadsafe shared storage for string.
 pub type Threadsafe = Arc<String>;
@@ -55,7 +58,7 @@ pub type Cloned = crate::data::Cloned<String>;
 /// Basic usage:
 ///
 /// ```
-/// use imstr::ImString;
+/// use imstr::string::ImString;
 ///
 /// // Create new ImString from a string literal
 /// let string = ImString::from("hello world");
@@ -103,7 +106,7 @@ impl ImString {
     /// # Example
     ///
     /// ```rust
-    /// # use imstr::ImString;
+    /// # use imstr::string::ImString;
     /// let string = ImString::from("hello");
     /// assert_eq!(string.as_bytes(), &[104, 101, 108, 108, 111]);
     /// ```
@@ -116,7 +119,7 @@ impl ImString {
     /// # Example
     ///
     /// ```rust
-    /// # use imstr::ImString;
+    /// # use imstr::string::ImString;
     /// let string = ImString::with_capacity(10);
     /// assert_eq!(string.capacity(), 10);
     /// ```
@@ -131,7 +134,7 @@ impl ImString {
     /// # Example
     ///
     /// ```rust
-    /// # use imstr::ImString;
+    /// # use imstr::string::ImString;
     /// let string = String::from("hello");
     /// let string = ImString::from_std_string(string);
     /// ```
@@ -150,7 +153,7 @@ impl ImString {
     /// # Example
     ///
     /// ```rust
-    /// # use imstr::ImString;
+    /// # use imstr::string::ImString;
     /// let mut string = ImString::from("hello");
     /// assert_eq!(string, "hello");
     /// string.clear();
@@ -170,7 +173,7 @@ impl ImString {
     /// # Example
     ///
     /// ```rust
-    /// # use imstr::ImString;
+    /// # use imstr::string::ImString;
     /// let string = ImString::from("hello");
     /// assert_eq!(string.len(), "hello".len());
     /// ```
@@ -184,7 +187,7 @@ impl ImString {
     /// it.
     ///
     /// ```rust
-    /// # use imstr::ImString;
+    /// # use imstr::string::ImString;
     /// let string = ImString::from("hello");
     /// let string = string.into_std_string();
     /// assert_eq!(string, "hello");
@@ -210,7 +213,7 @@ impl ImString {
     /// # Example
     ///
     /// ```rust
-    /// # use imstr::ImString;
+    /// # use imstr::string::ImString;
     /// let string = ImString::new();
     /// assert_eq!(string, "");
     /// ```
@@ -223,7 +226,7 @@ impl ImString {
     /// # Example
     ///
     /// ```rust
-    /// # use imstr::ImString;
+    /// # use imstr::string::ImString;
     /// let mut string = ImString::with_capacity(10);
     /// assert_eq!(string.capacity(), 10);
     /// ```
@@ -252,7 +255,7 @@ impl ImString {
     /// # Example
     ///
     /// ```rust
-    /// # use imstr::ImString;
+    /// # use imstr::string::ImString;
     /// let string = ImString::from("hello");
     /// assert_eq!(string.as_str(), "hello");
     /// ```
@@ -304,7 +307,7 @@ impl ImString {
     /// # Examples
     ///
     /// ```
-    /// use imstr::ImString;
+    /// use imstr::string::ImString;
     /// use std::sync::Arc;
     ///
     /// let string: ImString = ImString::from("hello world");
@@ -325,7 +328,7 @@ impl ImString {
     /// # Examples
     ///
     /// ```
-    /// use imstr::ImString;
+    /// use imstr::string::ImString;
     /// use std::ops::Range;
     ///
     /// let string: ImString = ImString::from("hello world");
@@ -343,7 +346,7 @@ impl ImString {
     /// # Example
     ///
     /// ```rust
-    /// # use imstr::ImString;
+    /// # use imstr::string::ImString;
     /// let mut string = ImString::from("Hello!");
     /// string.insert_str(5, ", World");
     /// assert_eq!(string, "Hello, World!");
@@ -388,7 +391,7 @@ impl ImString {
     /// # Examples
     ///
     /// ```rust
-    /// # use imstr::ImString;
+    /// # use imstr::string::ImString;
     /// let string = ImString::from("");
     /// assert_eq!(string.is_empty(), true);
     ///
@@ -918,7 +921,7 @@ impl<'a, I: Iterator<Item = &'a str>> Iterator for ImStringIterator<'a, I> {
                     string: self.string.clone(),
                     offset,
                 })
-            },
+            }
             None => None,
         }
     }
@@ -983,14 +986,20 @@ fn test_new() {
 
 #[cfg(feature = "serde")]
 impl serde::Serialize for ImString {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
         serializer.serialize_str(self.as_str())
     }
 }
 
 #[cfg(feature = "serde")]
 impl<'de> serde::Deserialize<'de> for ImString {
-    fn deserialize<D>(deserializer: D) -> Result<ImString, D::Error> where D: serde::Deserializer<'de> {
+    fn deserialize<D>(deserializer: D) -> Result<ImString, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
         String::deserialize(deserializer).map(ImString::from)
     }
 }

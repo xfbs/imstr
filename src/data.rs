@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::rc::Rc;
+use std::sync::Arc;
 
 /// Set of common operations on shared data.
 ///
@@ -11,7 +11,7 @@ use std::rc::Rc;
 /// The `Data` trait is generic over the type of the inner value of the shared data, `T`.
 /// Implementers of this trait must provide methods to immutable access, and may provide methods to
 /// mutably access the data.
-pub trait Data<T> {
+pub trait Data<T>: Clone {
     /// Create some new data.
     ///
     /// # Example
@@ -169,7 +169,7 @@ impl<T: Clone> Data<T> for Cloned<T> {
 }
 
 #[cfg(test)]
-fn test_i32<T: Data<i32> + Clone>() {
+fn test_i32<T: Data<i32>>() {
     let mut number = T::new(16);
     assert_eq!(number.get(), &16);
     if let Some(number) = number.get_mut() {
@@ -181,7 +181,7 @@ fn test_i32<T: Data<i32> + Clone>() {
 }
 
 #[cfg(test)]
-fn test_string<T: Data<String> + Clone>() {
+fn test_string<T: Data<String>>() {
     let mut string = T::new("Hello".into());
     assert_eq!(string.get(), "Hello");
     if let Some(string) = string.get_mut() {

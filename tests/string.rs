@@ -1,6 +1,6 @@
 // Taken from https://github.com/rust-lang/rust/blob/master/library/alloc/tests/string.rs
-use imstr::ImString;
-use imstr::ToImString;
+use imstr::string::ImString;
+use imstr::string::ToImString;
 use std::borrow::Cow;
 use std::cell::Cell;
 use std::collections::hash_map::DefaultHasher;

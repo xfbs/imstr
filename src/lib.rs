@@ -8,10 +8,15 @@
 //!
 //! This crate is heavily inspired by the standard library's [String](std::string::String) type and
 //! the `bytes` crate's [Bytes](https://docs.rs/bytes/latest/bytes/struct.Bytes.html) type.
-mod string;
-pub mod error;
 pub mod data;
+pub mod error;
+pub mod string;
+pub mod string_next;
 //mod os_string;
 
-pub use string::{ToImString, ImString};
+//pub use string::{ToImString, ImString};
 //pub use os_string::*;
+//
+
+/// Thread-safe immutable string.
+pub type ImString = string_next::ImString<string_next::Threadsafe>;

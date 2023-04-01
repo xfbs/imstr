@@ -16,4 +16,3 @@ fn slice_error() {
     error.clone();
     format!("{error:?}");
 }
-
