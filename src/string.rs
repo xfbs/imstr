@@ -14,9 +14,48 @@ use std::string::{String, ToString};
 use std::sync::Arc;
 use std::vec::IntoIter;
 
-/// Cheaply clonable and slicable UTF-8 string type.
+/// Cheaply cloneable and sliceable UTF-8 string type.
 ///
-/// It uses copy-on-write and reference counting to allow for efficient operations.
+/// An `ImString` is a cheaply cloneable and sliceable UTF-8 string type,
+/// designed to provide efficient operations for working with text data.
+///
+/// `ImString` is backed by a reference-counted shared
+/// [`String`](std::string::String), which allows it to provide efficient
+/// cloning and slicing operations. When an `ImString` is cloned or sliced,
+/// it creates a new view into the underlying `String`, without copying the
+/// text data. This makes working with large strings and substrings more
+/// memory-efficient.
+///
+/// The `ImString` struct contains two fields:
+///
+/// - `string`: An [`Arc`](std::sync::Arc) wrapping a `String`, which ensures
+///   that the underlying `String` data is shared and reference-counted.
+///
+/// - `offset`: A [`Range`](std::ops::Range) that defines the start and end
+///   positions of the `ImString`'s view into the underlying `String`. The
+///   `offset` must always point to a valid UTF-8 region inside the `string`.
+///
+/// Due to its design, `ImString` is especially suitable for use cases where
+/// strings are frequently cloned or sliced, but modifications to the text data
+/// are less common.
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// use imstr::ImString;
+///
+/// // Create new ImString from a string literal
+/// let string = ImString::from("hello world");
+///
+/// // Clone the ImString without copying the text data.
+/// let string_clone = string.clone();
+///
+/// // Create a slice (substring) without copying the text data.
+/// let string_slice = string.slice(0..5);
+/// assert_eq!(string_slice, "hello");
+/// ```
 #[derive(Clone)]
 pub struct ImString {
     /// Underlying string
@@ -63,26 +102,44 @@ fn try_slice_offset(current: &[u8], candidate: &[u8]) -> Option<Range<usize>> {
 impl ImString {
     /// Returns a byte slice of this string's contents.
     ///
-    /// The inverse of this method is [from_utf8](ImString::from_utf8) or
-    /// [from_utf8_lossy](ImString::from_utf8_lossy).
+    /// The inverse of this method is [`from_utf8`](ImString::from_utf8) or
+    /// [`from_utf8_lossy`](ImString::from_utf8_lossy).
     ///
     /// # Example
     ///
     /// ```rust
     /// # use imstr::ImString;
     /// let string = ImString::from("hello");
-    /// assert_eq!(string.as_bytes(), b"hello");
+    /// assert_eq!(string.as_bytes(), &[104, 101, 108, 108, 111]);
     /// ```
     pub fn as_bytes(&self) -> &[u8] {
         self.string.as_bytes()
     }
 
-    /// Get the current capacity of the string.
+    /// Return the backing [String](std::string::String)'s contents, in bytes.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::with_capacity(10);
+    /// assert_eq!(string.capacity(), 10);
+    /// ```
     pub fn capacity(&self) -> usize {
         self.string.capacity()
     }
 
-    /// Create a new ImString instance from a standard library [String](std::string::String).
+    /// Create a new `ImString` instance from a standard library [`String`](std::string::String).
+    ///
+    /// This method will construct the `ImString` without needing to clone the `String` instance.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = String::from("hello");
+    /// let string = ImString::from_std_string(string);
+    /// ```
     pub fn from_std_string(string: String) -> Self {
         ImString {
             offset: 0..string.as_bytes().len(),
@@ -113,7 +170,7 @@ impl ImString {
 
     /// Returns the length of the string in bytes.
     ///
-    /// This will not return the length in bytes or graphemes.
+    /// This will not return the length in `char`s or graphemes.
     ///
     /// # Example
     ///
@@ -127,6 +184,16 @@ impl ImString {
     }
 
     /// Convert this string into a standard library [String](std::string::String).
+    ///
+    /// If this string has no other clones, it will return the `String` without needing to clone
+    /// it.
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("hello");
+    /// let string = string.into_std_string();
+    /// assert_eq!(string, "hello");
+    /// ```
     pub fn into_std_string(mut self) -> String {
         if self.offset.start != 0 {
             return self.as_str().to_string();
@@ -143,7 +210,7 @@ impl ImString {
         }
     }
 
-    /// Creates a new, empty ImString.
+    /// Creates a new, empty `ImString`.
     ///
     /// # Example
     ///
@@ -232,10 +299,44 @@ impl ImString {
         }
     }
 
+    /// Returns a clone of the underlying reference-counted shared `String`.
+    ///
+    /// This method provides access to the raw `Arc<String>` that backs the `ImString`.
+    /// Note that the returned `Arc<String>` may contain more data than the `ImString` itself,
+    /// depending on the `ImString`'s `offset`. To access the string contents represented
+    /// by the `ImString`, consider using `as_str()` instead.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use imstr::ImString;
+    /// use std::sync::Arc;
+    ///
+    /// let string: ImString = ImString::from("hello world");
+    /// let raw_string: Arc<String> = string.raw_string();
+    /// assert_eq!(&*raw_string, "hello world");
+    /// ```
     pub fn raw_string(&self) -> Arc<String> {
         self.string.clone()
     }
 
+    /// Returns a clone of the `ImString`'s `offset` as a `Range<usize>`.
+    ///
+    /// The `offset` represents the start and end positions of the `ImString`'s view
+    /// into the underlying `String`. This method is useful when you need to work with
+    /// the raw offset values, for example, when creating a new `ImString` from a slice
+    /// of the current one.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use imstr::ImString;
+    /// use std::ops::Range;
+    ///
+    /// let string: ImString = ImString::from("hello world");
+    /// let raw_offset: Range<usize> = string.raw_offset();
+    /// assert_eq!(raw_offset, 0..11);
+    /// ```
     pub fn raw_offset(&self) -> Range<usize> {
         self.offset.clone()
     }
