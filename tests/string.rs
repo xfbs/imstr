@@ -1,6 +1,5 @@
 // Taken from https://github.com/rust-lang/rust/blob/master/library/alloc/tests/string.rs
-use imstr::string::ImString;
-use imstr::string::ToImString;
+use imstr::ImString;
 use std::borrow::Cow;
 use std::cell::Cell;
 use std::collections::hash_map::DefaultHasher;
@@ -49,7 +48,7 @@ fn can_deref() {
 #[test]
 fn hash() {
     let mut hasher = DefaultHasher::new();
-    let string = "hello".to_im_string();
+    let string = ImString::from("hello");
     string.hash(&mut hasher);
 }
 
@@ -171,7 +170,7 @@ fn test_str_add() {
 
 #[test]
 fn insert() {
-    let mut s = "foobar".to_im_string();
+    let mut s = ImString::from("foobar");
     s.insert(0, 'ệ');
     assert_eq!(s, "ệfoobar");
     s.insert(6, 'ย');
@@ -181,18 +180,18 @@ fn insert() {
 #[test]
 #[should_panic]
 fn insert_bad1() {
-    "".to_im_string().insert(1, 't');
+    ImString::from("").insert(1, 't');
 }
 
 #[test]
 #[should_panic]
 fn insert_bad2() {
-    "ệ".to_im_string().insert(1, 't');
+    ImString::from("ệ").insert(1, 't');
 }
 
 #[test]
 fn insert_str() {
-    let mut s = "foobar".to_im_string();
+    let mut s = ImString::from("foobar");
     s.insert_str(0, "ệ");
     assert_eq!(s, "ệfoobar");
     s.insert_str(6, "ย");
@@ -202,32 +201,32 @@ fn insert_str() {
 #[test]
 #[should_panic]
 fn insert_str_bad1() {
-    "".to_im_string().insert_str(1, "test");
+    ImString::from("").insert_str(1, "test");
 }
 
 #[test]
 #[should_panic]
 fn insert_str_bad2() {
-    "ệ".to_im_string().insert_str(1, "test");
+    ImString::from("ệ").insert_str(1, "test");
 }
 
 #[test]
 fn test_from_iterator() {
-    let s = "ศไทย中华Việt Nam".to_im_string();
+    let s = ImString::from("ศไทย中华Việt Nam");
     let t = "ศไทย中华";
     let u = "Việt Nam";
 
     let a: ImString = s.chars().collect();
     assert_eq!(s, a);
 
-    let mut b = t.to_im_string();
+    let mut b: ImString = t.into();
     b.extend(u.chars());
     assert_eq!(s, b);
 
     let c: ImString = [t, u].into_iter().collect();
     assert_eq!(s, c);
 
-    let mut d = t.to_im_string();
+    let mut d: ImString = t.into();
     d.extend(vec![u]);
     assert_eq!(s, d);
 }
@@ -236,12 +235,6 @@ fn test_from_iterator() {
 fn test_from_cow_str() {
     assert_eq!(ImString::from(Cow::Borrowed("string")), "string");
     assert_eq!(ImString::from(Cow::Owned(String::from("string"))), "string");
-}
-
-#[test]
-fn test_unsized_to_string() {
-    let s: &str = "abc";
-    let _: ImString = (*s).to_im_string();
 }
 
 #[test]

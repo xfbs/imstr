@@ -10,7 +10,6 @@
 //! the `bytes` crate's [Bytes](https://docs.rs/bytes/latest/bytes/struct.Bytes.html) type.
 pub mod data;
 pub mod error;
-pub mod string;
 pub mod string_next;
 //mod os_string;
 
