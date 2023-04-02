@@ -43,7 +43,7 @@ This is a comparison of this crate to other, similar crates. The comparison is m
 Here is the data, with longs to the crates for further examination:
 
 | Crate | Zero-Copy | Slicing | Modify | Generic | Compatible | Notes |
-| --- | --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | --- | --- | --- |
 | [`imstr`] | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | |
 | [`tendril`] | Yes | Yes | Yes | Yes | No | Complex implementation |
 | [`immut_string`] | Yes | No | No |  | Simple |
