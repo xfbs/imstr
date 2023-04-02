@@ -87,21 +87,21 @@ Here is the data, with links to the crates for further examination:
 
 | Crate | Zero-Copy | Slicing | Modify | Generic | Compatible | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| [`imstr`] | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | This crate. |
-| [`tendril`] | Yes | Yes | Yes | Yes | No | Complex implementation. API not quite compatible with [`String`], but otherwise closest to what this crate does. |
-| [`immut_string`] | Yes | No | Yes (no optimisation) | No | No | Simply a wrapper around `Arc<String>`. |
-| [`immutable_string`] | Yes | No | No | No | No | Wrapper around `Arc<str>`. |
-| [`arccstr`] | Yes | No | No | No | No | Not UTF-8 (Null-terminated C string). Hand-written `Arc` implementation. |
-| [`implicit-clone`] | Yes | No | No | No\* | Yes | Immutable string library. Has `sync` and `unsync` variants. |
-| [`semistr`] | No | No | No | No | No | Stores short strings inline. |
-| [`quetta`] | Yes | Yes | No | No | No | Wrapper around `Arc<String>` that can be sliced. |
-| [`bytesstr`] | Yes | No\* | No | No | No | Wrapper around `Bytes`. Cannot be directly sliced. |
-| [`fast-str`] | Yes | No | No | No | No | Looks like there could be some unsafety. |
-| [`flexstr`] | Yes | No | No | Yes | No | |
-| [`bytestring`] | Yes | No | No | No | No | Wrapper around `Bytes`. Used by `actix`. |
-| [`arcstr`] | Yes | Yes | No | No | No | Can store string literal as `&'static str`. |
-| [`cowstr`] | Yes | No | Yes | No | No | Reimplements `Arc`, custom allocation strategy. |
-| [`strck`] | No | No | No | Yes | No | Typechecked string library. |
+| [`imstr`] | ✅ | ✅ | ✅ | ✅ | ✅ | This crate. |
+| [`tendril`] |✅|✅|✅|✅|❌| Complex implementation. API not quite compatible with [`String`], but otherwise closest to what this crate does. |
+| [`immut_string`] |✅|❌| 🟡 (no optimization) |❌|❌| Simply a wrapper around `Arc<String>`. |
+| [`immutable_string`] |✅|❌|❌|❌|❌| Wrapper around `Arc<str>`. |
+| [`arccstr`] |✅|❌|❌|❌|❌| Not UTF-8 (Null-terminated C string). Hand-written `Arc` implementation. |
+| [`implicit-clone`] |✅|❌|❌|🟡|✅| Immutable string library. Has `sync` and `unsync` variants. |
+| [`semistr`] |❌|❌|❌|❌|❌| Stores short strings inline. |
+| [`quetta`] |✅|✅|❌|❌|❌| Wrapper around `Arc<String>` that can be sliced. |
+| [`bytesstr`] |✅|🟡|❌|❌|❌| Wrapper around `Bytes`. Cannot be directly sliced. |
+| [`fast-str`] |✅|❌|❌|❌|❌| Looks like there could be some unsafety. |
+| [`flexstr`] |✅|❌|❌|✅|❌| |
+| [`bytestring`] |✅|❌|❌|❌|❌| Wrapper around `Bytes`. Used by `actix`. |
+| [`arcstr`] |✅|✅|❌|❌|❌| Can store string literal as `&'static str`. |
+| [`cowstr`] |✅|❌|✅|❌|❌| Reimplements `Arc`, custom allocation strategy. |
+| [`strck`] |❌|❌|❌|✅|❌| Typechecked string library. |
 
 ## License
 
