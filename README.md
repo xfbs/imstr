@@ -47,7 +47,8 @@ cannot result in unsound behaviour.
 
 ## Similar
 
-This is a comparison of this crate to other, similar crates. The comparison is made on four features:
+This is a comparison of this crate to other, similar crates. The comparison is
+made on four features:
 
 - **Zero-Copy**: is it a zero-copy operation to clone a string?
 - **Slicing**: is it possibly to cheaply slice a string?
@@ -69,12 +70,11 @@ Here is the data, with links to the crates for further examination:
 | [`quetta`] | Yes | Yes | No | No | No | Wrapper around `Arc<String>` that can be sliced. |
 | [`bytesstr`] | Yes | No\* | No | No | No | Wrapper around `Bytes`. Cannot be directly sliced. |
 | [`fast-str`] | Yes | No | No | No | No | Looks like there could be some unsafety. |
-| [`flexstr`] | ? | ? | ? | ? | |
-| [`sstable`] | ? | ? | ? | ? | |
-| [`bytestring`] | ? | ? | ? | ? | |
-| [`arcstr`] | ? | ? | ? | ? | |
-| [`cowstr`] | ? | ? | ? | ? | |
-| [`strck`] | ? | ? | ? | ? | |
+| [`flexstr`] | Yes | No | No | Yes | No | |
+| [`bytestring`] | Yes | No | No | No | No | Wrapper around `Bytes`. Used by `actix`. |
+| [`arcstr`] | Yes | Yes | No | No | No | Can store string literal as `&'static str`. |
+| [`cowstr`] | Yes | No | Yes | No | No | Reimplements `Arc`, custom allocation strategy. |
+| [`strck`] | No | No | No | Yes | No | Typechecked string library. |
 
 ## License
 
@@ -91,7 +91,6 @@ MIT, see [LICENSE.md](LICENSE.md).
 [`bytesstr`]: https://crates.io/crates/bytesstr
 [`fast-str`]: https://crates.io/crates/fast-str
 [`flexstr`]: https://crates.io/crates/flexstr
-[`sstable`]: https://crates.io/crates/sstable
 [`bytestring`]: https://crates.io/crates/bytestring
 [`arcstr`]: https://crates.io/crates/arcstr
 [`cowstr`]: https://crates.io/crates/cowstr
