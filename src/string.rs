@@ -1164,6 +1164,20 @@ tests! {
     }
 
     #[test]
+    fn test_from_utf8_lossy<S: Data<String>>() {
+        let string: ImString<S> = ImString::from_utf8_lossy(b"hello");
+        assert_eq!(string, "hello");
+    }
+
+    #[test]
+    fn test_from_utf8_unchecked<S: Data<String>>() {
+        let string: ImString<S> = unsafe {
+            ImString::from_utf8_unchecked(b"hello".to_vec())
+        };
+        assert_eq!(string, "hello");
+    }
+
+    #[test]
     fn test_as_ref_str<S: Data<String>>(string: ImString<S>) {
         let s: &str = string.as_ref();
         assert_eq!(s, string.as_str());

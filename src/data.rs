@@ -104,9 +104,7 @@ pub trait Data<T>: Clone {
     ///
     /// assert_eq!(data.get(), &16);
     /// ```
-    fn get_mut(&mut self) -> Option<&mut T> {
-        None
-    }
+    fn get_mut(&mut self) -> Option<&mut T>;
 }
 
 impl<T> Data<T> for Arc<T> {
