@@ -7,6 +7,8 @@ range into that String. This allows for cheap zero-copy cloning and slicing of
 the string. This is especially useful for parsing operations, where a large
 string needs to be sliced into a lot of substrings.
 
+![Diagram of ImString Internals](diagram.svg)
+
 ## Features
 
 - **Efficient Cloning**: The crate's architecture enables low-cost (zero-copy)
