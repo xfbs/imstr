@@ -2,30 +2,60 @@
 
 Inspired by the [bytes](https://docs.rs/bytes) crate, which offers zero-copy
 byte slices, this crate does the same but for strings. It is backed by standard
-library string that is stored by an Arc, and every instance contains a range
-into that String.  This allows for cloning and creating slices very cheaply.
-This is especially useful for parsing operations, where a large string needs to
-be sliced into a lot of substrings.
+library string that is stored by smart pointer, and every instance contains a
+range into that String. This allows for cheap zero-copy cloning and slicing of
+the string. This is especially useful for parsing operations, where a large
+string needs to be sliced into a lot of substrings.
+
+## Features
+
+- **Efficient Cloning**: The crate's architecture enables low-cost
+  (zero-copy) clone and slice creation, making it ideal for parsing strings that are widely shared.
+- **Efficient Slicing**: The crate's architecture enables low-cost
+  (zero-copy) slice creation, making it ideal for parsing operations.
+- **Copy on Write**: Despite being cheap to clone and slice, it allows for
+  mutation by using copy-on-write. For strings that are not shared, it has an
+  optimisation to be able to mutate it in-place safely.
+- **Compatibility**: The API is designed to closely resemble Rust's standard
+  library String, facilitating smooth integration and being almost a drop-in
+  replacement.
+- **Generic over Storage**: The crate supports both `Arc<String>` for
+  multithreaded applications and `Rc<String>` for single-threaded use, providing
+  adaptability to different storage requirements. 
 
 ## Similar
 
 | Crate | Zero-Copy | Slicing | Modify | String Compatible | Notes |
 | --- | --- | --- | --- | --- | --- |
-| [Tendril](https://crates.io/crates/tendril) | Yes | Yes | Yes | No | Complex implementation |
-| [Immut String](https://crates.io/crates/immut_string) | Yes | No | No |  | Simple |
-| [Immutable String](https://crates.io/crates/immutable_string) | No | No | No | | |
-| [ArcCStr](https://crates.io/crates/arccstr) | Yes | No | No | | Not UTF-8 |
-| [Implicit Clone](https://crates.io/crates/implicit-clone) | Yes | No | No | | |
+| [`tendril`] | Yes | Yes | Yes | No | Complex implementation |
+| [`immut_string`] | Yes | No | No |  | Simple |
+| [`immutable_string`] | No | No | No | | |
+| [`arccstr`] | Yes | No | No | | Not UTF-8 |
+| [`implicit-clone`] | Yes | No | No | | |
+| [`semistr`] | ? | ? | ? | ? | |
+| [`quetta`] | ? | ? | ? | ? | |
+| [`bytesstr`] | ? | ? | ? | ? | |
+| [`fast-str`] | ? | ? | ? | ? | |
+| [`flexstr`] | ? | ? | ? | ? | |
+| [`sstable`] | ? | ? | ? | ? | |
+| [`bytestring`] | ? | ? | ? | ? | |
+| [`arcstr`] | ? | ? | ? | ? | |
+| [`cowstr`] | ? | ? | ? | ? | |
+| [`strck`] | ? | ? | ? | ? | |
 
-
-https://crates.io/crates/semistr
-https://crates.io/crates/quetta
-https://crates.io/crates/bytesstr
-https://crates.io/crates/fast-str
-https://crates.io/crates/flexstr
-https://crates.io/crates/sstable
-https://crates.io/crates/bytestring
-https://crates.io/crates/arcstr
-https://crates.io/crates/cowstr
-https://crates.io/crates/strck
+[`tendril`]: https://crates.io/crates/tendril
+[`immut_string`]: https://crates.io/crates/immut_string
+[`immutable_string`]: https://crates.io/crates/immutable_string
+[`arccstr`]: https://crates.io/crates/arccstr
+[`implicit-clone`]: https://crates.io/crates/implicit-clone
+[`semistr`]: https://crates.io/crates/semistr
+[`quetta`]: https://crates.io/crates/quetta
+[`bytesstr`]: https://crates.io/crates/bytesstr
+[`fast-str`]: https://crates.io/crates/fast-str
+[`flexstr`]: https://crates.io/crates/flexstr
+[`sstable`]: https://crates.io/crates/sstable
+[`bytestring`]: https://crates.io/crates/bytestring
+[`arcstr`]: https://crates.io/crates/arcstr
+[`cowstr`]: https://crates.io/crates/cowstr
+[`strck`]: https://crates.io/crates/strck
 
