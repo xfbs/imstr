@@ -69,7 +69,7 @@ Here is the data, with links to the crates for further examination:
 
 ## License
 
-MIT, see [](LICENSE.md).
+MIT, see [LICENSE.md](LICENSE.md).
 
 [`imstr`]: https://crates.io/crates/imstr
 [`tendril`]: https://crates.io/crates/tendril
