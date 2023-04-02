@@ -45,9 +45,9 @@ Here is the data, with longs to the crates for further examination:
 | Crate | Zero-Copy | Slicing | Modify | Generic | Compatible | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | [`imstr`] | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | |
-| [`tendril`] | Yes | Yes | Yes | Yes | No | Complex implementation |
-| [`immut_string`] | Yes | No | No |  | Simple |
-| [`immutable_string`] | No | No | No | | |
+| [`tendril`] | Yes | Yes | Yes | Yes | No | Complex implementation, API not quite compatible with [`String`], but otherwise closest to what this crate does. |
+| [`immut_string`] | Yes | No | Yes (no optimisation) | No | No | Simply a wrapper around `Arc<String>`. |
+| [`immutable_string`] | Yes | No | No | No | No | Wrapper around `Arc<str>`. |
 | [`arccstr`] | Yes | No | No | | Not UTF-8 |
 | [`implicit-clone`] | Yes | No | No | | |
 | [`semistr`] | ? | ? | ? | ? | |
@@ -65,14 +65,7 @@ Here is the data, with longs to the crates for further examination:
 
 MIT, see LICENSE.md.
 
-
-
-
-
-
-
-
-
+[`imstr`]: https://crates.io/crates/imstr
 [`tendril`]: https://crates.io/crates/tendril
 [`immut_string`]: https://crates.io/crates/immut_string
 [`immutable_string`]: https://crates.io/crates/immutable_string
