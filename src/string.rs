@@ -260,6 +260,33 @@ impl<S: Data<String>> ImString<S> {
     }
 
     /// Converts a slice of bytes to a string, including invalid characters.
+    ///
+    /// See [`String::from_utf8_lossy()`] for more details on this function.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use imstr::ImString;
+    /// // some bytes, in a vector
+    /// let sparkle_heart = vec![240, 159, 146, 150];
+    ///
+    /// let sparkle_heart = ImString::from_utf8_lossy(&sparkle_heart);
+    ///
+    /// assert_eq!(sparkle_heart, "💖");
+    /// ```
+    ///
+    /// Incorrect bytes:
+    ///
+    /// ```
+    /// # use imstr::ImString;
+    /// // some invalid bytes
+    /// let input = b"Hello \xF0\x90\x80World";
+    /// let output = ImString::from_utf8_lossy(input);
+    ///
+    /// assert_eq!(output, "Hello �World");
+    /// ```
     pub fn from_utf8_lossy(bytes: &[u8]) -> Self {
         let string = String::from_utf8_lossy(bytes).into_owned();
         ImString::from_std_string(string)
@@ -320,11 +347,15 @@ impl<S: Data<String>> ImString<S> {
     }
 
     pub fn truncate(&mut self, length: usize) {
+        // actual new length
+        let length = self.offset.start + length;
+
+        // truncate backing string if possible
         if let Some(mut string) = self.string.get_mut() {
             string.truncate(length);
-        } else {
-            self.offset.end = self.offset.end.min(length);
         }
+
+        self.offset.end = self.offset.end.min(length);
     }
 
     pub fn push(&mut self, c: char) {
@@ -1177,5 +1208,48 @@ tests! {
     #[test]
     fn test_raw_string<S: Data<String>>(string: ImString<S>) {
         assert_eq!(string.string.get(), string.raw_string().get());
+    }
+
+    #[test]
+    fn into_std_string<S: Data<String>>(string: ImString<S>) {
+        let std_clone = string.as_str().to_string();
+        let std_string = string.into_std_string();
+        assert_eq!(std_clone, std_string);
+    }
+
+    #[test]
+    fn test_truncate<S: Data<String>>(string: ImString<S>) {
+        let mut clone = string.as_str().to_string();
+        let mut string = string;
+
+        for length in (0..string.len()).rev() {
+            if string.is_char_boundary(length) {
+                string.truncate(length);
+                clone.truncate(length);
+                assert_eq!(string, clone);
+            }
+        }
+    }
+
+    #[test]
+    fn test_str_ref<S: Data<String>>(string: ImString<S>) {
+        assert_eq!(string, string.str_ref(string.as_str()));
+    }
+
+    #[test]
+    fn test_try_str_ref<S: Data<String>>(string: ImString<S>) {
+        assert_eq!(string, string.try_str_ref(string.as_str()).unwrap());
+        assert_eq!(string.try_str_ref("test"), None);
+    }
+
+    #[test]
+    fn test_slice_ref<S: Data<String>>(string: ImString<S>) {
+        assert_eq!(string, string.slice_ref(string.as_bytes()));
+    }
+
+    #[test]
+    fn test_try_slice_ref<S: Data<String>>(string: ImString<S>) {
+        assert_eq!(string, string.try_slice_ref(string.as_bytes()).unwrap());
+        assert_eq!(string.try_slice_ref(b"test"), None);
     }
 }
