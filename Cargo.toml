@@ -12,5 +12,4 @@ license = "MIT"
 serde = { version = "1.0.159", optional = true }
 
 [features]
-debug-internal = []
 serde = ["dep:serde"]
