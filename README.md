@@ -45,10 +45,37 @@ encoded. Any methods that might violate this are marked as unsafe. All methods
 that can fail have a `try_*` variant that will not panic. Use of safe functions
 cannot result in unsound behaviour.
 
+## Example
+
+```rust
+use imstr::ImString;
+
+// Create new ImString, allocates data.
+let mut string = ImString::from("Hello, World");
+
+// Edit: happens in-place (because this is the only reference).
+string.push_str("!");
+
+// Clone: this is zero-copy.
+let clone = string.clone();
+
+// Slice: this is zero-copy.
+let hello = string.slice(0..5);
+assert_eq!(hello, "Hello");
+
+// Slice: this is zero-copy.
+let world = string.slice(7..12);
+assert_eq!(world, "World");
+
+// Here we have to copy only the part that the slice refers to so it can be modified.
+let hello = hello + "!";
+assert_eq!(hello, "Hello!");
+```
+
 ## Similar
 
 This is a comparison of this crate to other, similar crates. The comparison is
-made on four features:
+made on these features:
 
 - **Zero-Copy**: is it a zero-copy operation to clone a string?
 - **Slicing**: is it possibly to cheaply slice a string?
