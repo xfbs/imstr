@@ -1,4 +1,4 @@
-use crate::data::Data;
+use crate::data::{Cloned, Data};
 use crate::error::*;
 use std::borrow::{Borrow, BorrowMut, Cow};
 use std::cmp::Ordering;
@@ -24,9 +24,6 @@ pub type Threadsafe = Arc<String>;
 
 /// Non-threadsafe shared storage for string.
 pub type Local = Rc<String>;
-
-/// Non-shared storage for string.
-pub type Cloned = crate::data::Cloned<String>;
 
 /// Cheaply cloneable and sliceable UTF-8 string type.
 ///
@@ -274,12 +271,16 @@ impl<S: Data<String>> ImString<S> {
     }
 
     unsafe fn unchecked_append<F: FnOnce(String) -> String>(&mut self, f: F) {
-        if let Some(mut string_ref) = self.string.get_mut() {
-            let string: String = std::mem::take(&mut string_ref);
-            *string_ref = f(string);
-        } else {
-            self.string = S::new(f(self.as_str().to_string()));
-            self.offset.start = 0;
+        match self.string.get_mut() {
+            Some(mut string_ref) if self.offset.start == 0 => {
+                let mut string: String = std::mem::take(&mut string_ref);
+                string.truncate(self.offset.end);
+                *string_ref = f(string);
+            }
+            _ => {
+                self.string = S::new(f(self.as_str().to_string()));
+                self.offset.start = 0;
+            }
         }
 
         self.offset.end = self.string.get().as_bytes().len();
@@ -819,6 +820,8 @@ fn test_strings<S: Data<String>>() -> Vec<ImString<S>> {
         ImString::new(),
         ImString::default(),
         ImString::from("hello"),
+        ImString::from("0.0.0.0:800"),
+        ImString::from("localhost:1234"),
         long.clone(),
         long.slice(4..10),
         long.slice(0..4),
@@ -845,6 +848,8 @@ macro_rules! tests {
             fn $name <S: Data<String>>() $body
             $name::<Threadsafe>();
             $name::<Local>();
+            $name::<Cloned<String>>();
+            $name::<Box<String>>();
         }
         tests!{$($rest)*}
     };
@@ -859,6 +864,8 @@ macro_rules! tests {
             }
             $name::<Threadsafe>();
             $name::<Local>();
+            $name::<Cloned<String>>();
+            $name::<Box<String>>();
         }
         tests!{$($rest)*}
     }
@@ -1060,5 +1067,115 @@ tests! {
         string += "hello";
         std_string += "hello";
         assert_eq!(string, std_string);
+    }
+
+    #[test]
+    fn test_add<S: Data<String>>(string: ImString<S>) {
+        let mut std_string = string.as_str().to_string();
+        let std_string = std_string + "hello";
+        let string = string + "hello";
+        assert_eq!(string, std_string);
+    }
+
+    #[test]
+    fn test_to_socket_addrs<S: Data<String>>(string: ImString<S>) {
+        let addrs = string.to_socket_addrs().map(|s| s.collect::<Vec<_>>());
+        let str_addrs = string.as_str().to_socket_addrs().map(|s| s.collect::<Vec<_>>());
+        match addrs {
+            Ok(addrs) => assert_eq!(addrs, str_addrs.unwrap()),
+            Err(err) => assert!(str_addrs.is_err()),
+        }
+    }
+
+    #[test]
+    fn test_from_iterator_char<S: Data<String>>() {
+        let input = ['h', 'e', 'l', 'l', 'o'];
+        let string: ImString<S> = input.into_iter().collect();
+        assert_eq!(string, "hello");
+    }
+
+    #[test]
+    fn test_from_iterator_char_ref<S: Data<String>>() {
+        let input = ['h', 'e', 'l', 'l', 'o'];
+        let string: ImString<S> = input.iter().collect();
+        assert_eq!(string, "hello");
+    }
+
+    #[test]
+    fn test_from_iterator_str<S: Data<String>>() {
+        let input = ["hello", "world", "!"];
+        let string: ImString<S> = input.into_iter().collect();
+        assert_eq!(string, "helloworld!");
+    }
+
+    #[test]
+    fn test_extend_char<S: Data<String>>() {
+        let input = ['h', 'e', 'l', 'l', 'o'];
+        let mut string: ImString<S> = ImString::new();
+        string.extend(input.into_iter());
+        assert_eq!(string, "hello");
+    }
+
+    #[test]
+    fn test_extend_char_ref<S: Data<String>>() {
+        let input = ['h', 'e', 'l', 'l', 'o'];
+        let mut string: ImString<S> = ImString::new();
+        string.extend(input.into_iter());
+        assert_eq!(string, "hello");
+    }
+
+    #[test]
+    fn test_extend_str<S: Data<String>>() {
+        let input = ["hello", "world", "!"];
+        let mut string: ImString<S> = ImString::new();
+        string.extend(input.into_iter());
+        assert_eq!(string, "helloworld!");
+    }
+
+    #[test]
+    fn test_as_ref_str<S: Data<String>>(string: ImString<S>) {
+        let s: &str = string.as_ref();
+        assert_eq!(s, string.as_str());
+    }
+
+    #[test]
+    fn test_as_ref_bytes<S: Data<String>>(string: ImString<S>) {
+        let s: &[u8] = string.as_ref();
+        assert_eq!(s, string.as_bytes());
+    }
+
+    #[test]
+    fn test_as_ref_path<S: Data<String>>(string: ImString<S>) {
+        let s: &Path = string.as_ref();
+        assert_eq!(s, string.as_str().as_ref() as &Path);
+    }
+
+    #[test]
+    fn test_as_ref_os_str<S: Data<String>>(string: ImString<S>) {
+        let s: &OsStr = string.as_ref();
+        assert_eq!(s, string.as_str().as_ref() as &OsStr);
+    }
+
+    #[test]
+    fn test_partial_eq<S: Data<String>>(string: ImString<S>) {
+        assert_eq!(string, string.as_str());
+        assert_eq!(string, string.to_string());
+        assert_eq!(string, string);
+    }
+
+    #[test]
+    fn test_from<S: Data<String>>(string: ImString<S>) {
+        let std_string: String = string.clone().into();
+        assert_eq!(string, std_string);
+    }
+
+    #[test]
+    fn test_raw_offset<S: Data<String>>(string: ImString<S>) {
+        assert_eq!(string.offset, string.raw_offset());
+    }
+
+    #[test]
+    fn test_raw_string<S: Data<String>>(string: ImString<S>) {
+        assert_eq!(string.string.get(), string.raw_string().get());
     }
 }

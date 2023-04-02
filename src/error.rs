@@ -11,7 +11,7 @@ pub enum SliceError {
 }
 
 #[test]
-fn slice_error() {
+fn slice_error_debug() {
     let error = SliceError::StartOutOfBounds;
     error.clone();
     format!("{error:?}");
