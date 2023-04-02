@@ -9,6 +9,12 @@ string needs to be sliced into a lot of substrings.
 
 ![Diagram of ImString Internals](diagram.png)
 
+This crate offers a safe API that ensures that every string and every string
+slice is UTF-8 encoded. It does not allow slicing of strings within UTF-8
+multibyte sequences. It offers `try_*` functions for every operation that can
+fail to avoid panics. It also uses extensive unit testing with a full test
+coverage to ensure that there is no unsoundness.
+
 ## Features
 
 - **Efficient Cloning**: The crate's architecture enables low-cost (zero-copy)

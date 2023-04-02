@@ -1110,11 +1110,14 @@ tests! {
 
     #[test]
     fn test_to_socket_addrs<S: Data<String>>(string: ImString<S>) {
-        let addrs = string.to_socket_addrs().map(|s| s.collect::<Vec<_>>());
-        let str_addrs = string.as_str().to_socket_addrs().map(|s| s.collect::<Vec<_>>());
-        match addrs {
-            Ok(addrs) => assert_eq!(addrs, str_addrs.unwrap()),
-            Err(err) => assert!(str_addrs.is_err()),
+        #[cfg(not(miri))]
+        {
+            let addrs = string.to_socket_addrs().map(|s| s.collect::<Vec<_>>());
+            let str_addrs = string.as_str().to_socket_addrs().map(|s| s.collect::<Vec<_>>());
+            match addrs {
+                Ok(addrs) => assert_eq!(addrs, str_addrs.unwrap()),
+                Err(err) => assert!(str_addrs.is_err()),
+            }
         }
     }
 
