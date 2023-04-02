@@ -32,9 +32,20 @@ string needs to be sliced into a lot of substrings.
 
 ## Similar
 
-| Crate | Zero-Copy | Slicing | Modify | String Compatible | Notes |
+This is a comparison of this crate to other, similar crates. The comparison is made on four features:
+
+- **Zero-Copy**: is it a zero-copy operation to clone a string?
+- **Slicing**: is it possibly to cheaply slice a string?
+- **Modify**: is it possible to modify strings?
+- **Generic**: is it possible to swap out the storage mechanism?
+- **Compatible**: is it compatible with [`String`]?
+
+Here is the data, with longs to the crates for further examination:
+
+| Crate | Zero-Copy | Slicing | Modify | Generic | Compatible | Notes |
 | --- | --- | --- | --- | --- | --- |
-| [`tendril`] | Yes | Yes | Yes | No | Complex implementation |
+| [`imstr`] | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | |
+| [`tendril`] | Yes | Yes | Yes | Yes | No | Complex implementation |
 | [`immut_string`] | Yes | No | No |  | Simple |
 | [`immutable_string`] | No | No | No | | |
 | [`arccstr`] | Yes | No | No | | Not UTF-8 |
@@ -49,6 +60,18 @@ string needs to be sliced into a lot of substrings.
 | [`arcstr`] | ? | ? | ? | ? | |
 | [`cowstr`] | ? | ? | ? | ? | |
 | [`strck`] | ? | ? | ? | ? | |
+
+## License
+
+MIT, see LICENSE.md.
+
+
+
+
+
+
+
+
 
 [`tendril`]: https://crates.io/crates/tendril
 [`immut_string`]: https://crates.io/crates/immut_string
@@ -66,3 +89,5 @@ string needs to be sliced into a lot of substrings.
 [`cowstr`]: https://crates.io/crates/cowstr
 [`strck`]: https://crates.io/crates/strck
 [`String`]: https://doc.rust-lang.org/std/string/struct.String.html
+
+
