@@ -44,12 +44,12 @@ Here is the data, with longs to the crates for further examination:
 
 | Crate | Zero-Copy | Slicing | Modify | Generic | Compatible | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| [`imstr`] | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | |
+| [`imstr`] | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | This crate. |
 | [`tendril`] | Yes | Yes | Yes | Yes | No | Complex implementation, API not quite compatible with [`String`], but otherwise closest to what this crate does. |
 | [`immut_string`] | Yes | No | Yes (no optimisation) | No | No | Simply a wrapper around `Arc<String>`. |
 | [`immutable_string`] | Yes | No | No | No | No | Wrapper around `Arc<str>`. |
-| [`arccstr`] | Yes | No | No | | Not UTF-8 |
-| [`implicit-clone`] | Yes | No | No | | |
+| [`arccstr`] | Yes | No | No | No | No | Not UTF-8 (Null-terminated C string). Hand-written `Arc` implementation. |
+| [`implicit-clone`] | Yes | No | No | No\* | Yes | Immutable string library. Has `sync` and `unsync` variants. |
 | [`semistr`] | ? | ? | ? | ? | |
 | [`quetta`] | ? | ? | ? | ? | |
 | [`bytesstr`] | ? | ? | ? | ? | |
