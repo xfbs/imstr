@@ -24,3 +24,5 @@ peg = ["dep:peg-runtime"]
 
 [dev-dependencies]
 criterion = "0.4.0"
+peg = "0.8.1"
+
