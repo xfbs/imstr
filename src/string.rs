@@ -9,8 +9,8 @@ use std::hash::{Hash, Hasher};
 use std::iter::{Extend, FromIterator};
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::ops::{
-    Add, AddAssign, Bound, Deref, Index, IndexMut, Range, RangeBounds, RangeFrom, RangeFull,
-    RangeInclusive, RangeTo,
+    Add, AddAssign, Bound, Deref, DerefMut, Index, IndexMut, Range, RangeBounds, RangeFrom,
+    RangeFull, RangeInclusive, RangeTo,
 };
 use std::path::Path;
 use std::rc::Rc;
@@ -745,6 +745,12 @@ impl<S: Data<String>> Deref for ImString<S> {
 
     fn deref(&self) -> &Self::Target {
         self.as_str()
+    }
+}
+
+impl<S: Data<String>> DerefMut for ImString<S> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.mut_str()
     }
 }
 
