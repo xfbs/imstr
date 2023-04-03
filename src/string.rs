@@ -7,7 +7,7 @@ use std::ffi::OsStr;
 use std::fmt::{Debug, Display, Error as FmtError, Formatter, Write};
 use std::hash::{Hash, Hasher};
 use std::iter::{Extend, FromIterator};
-use std::net::{SocketAddr, ToSocketAddrs};
+use std::net::ToSocketAddrs;
 use std::ops::{
     Add, AddAssign, Bound, Deref, DerefMut, Index, IndexMut, Range, RangeBounds, RangeFrom,
     RangeFull, RangeInclusive, RangeTo,
@@ -17,7 +17,6 @@ use std::rc::Rc;
 use std::str::FromStr;
 use std::string::{String, ToString};
 use std::sync::Arc;
-use std::vec::IntoIter;
 
 /// Threadsafe shared storage for string.
 pub type Threadsafe = Arc<String>;
@@ -174,12 +173,8 @@ impl<S: Data<String>> ImString<S> {
         return &mut string[self.offset.clone()];
     }
 
-    fn cloned_mut_str(&mut self) -> &mut str {
-        todo!()
-    }
-
     unsafe fn try_modify_unchecked<F: FnOnce(&mut String)>(&mut self, f: F) -> bool {
-        if let Some(mut string) = self.string.get_mut() {
+        if let Some(string) = self.string.get_mut() {
             f(string);
             true
         } else {
@@ -231,7 +226,7 @@ impl<S: Data<String>> ImString<S> {
             return self.as_str().to_string();
         }
 
-        if let Some(mut string) = self.string.get_mut() {
+        if let Some(string) = self.string.get_mut() {
             if string.len() != self.offset.end {
                 string.truncate(self.offset.end);
             }
@@ -366,7 +361,7 @@ impl<S: Data<String>> ImString<S> {
         let length = self.offset.start + length;
 
         // truncate backing string if possible
-        if let Some(mut string) = self.string.get_mut() {
+        if let Some(string) = self.string.get_mut() {
             string.truncate(length);
         }
 
@@ -874,11 +869,11 @@ impl<'a, S: Data<String>> FromIterator<&'a str> for ImString<S> {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::data::Cloned;
 
-    #[cfg(test)]
     fn test_strings<S: Data<String>>() -> Vec<ImString<S>> {
         let long = ImString::from("long string here");
         let world = ImString::from("world");
@@ -1159,7 +1154,7 @@ mod tests {
 
         #[test]
         fn test_add<S: Data<String>>(string: ImString<S>) {
-            let mut std_string = string.as_str().to_string();
+            let std_string = string.as_str().to_string();
             let std_string = std_string + "hello";
             let string = string + "hello";
             assert_eq!(string, std_string);
@@ -1173,7 +1168,7 @@ mod tests {
                 let str_addrs = string.as_str().to_socket_addrs().map(|s| s.collect::<Vec<_>>());
                 match addrs {
                     Ok(addrs) => assert_eq!(addrs, str_addrs.unwrap()),
-                    Err(err) => assert!(str_addrs.is_err()),
+                    Err(_err) => assert!(str_addrs.is_err()),
                 }
             }
         }
