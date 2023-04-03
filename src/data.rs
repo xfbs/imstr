@@ -1,6 +1,8 @@
-pub use std::boxed::Box;
-pub use std::rc::Rc;
-pub use std::sync::Arc;
+#[cfg(feature = "std")]
+pub use {std::boxed::Box, std::rc::Rc, std::sync::Arc};
+
+#[cfg(feature = "alloc")]
+pub use {alloc::boxed::Box, alloc::rc::Rc, alloc::string::String, alloc::sync::Arc};
 
 /// Set of common operations on shared data.
 ///

@@ -1,4 +1,11 @@
+#[cfg(feature = "std")]
 pub use std::string::{FromUtf16Error, FromUtf8Error};
+
+#[cfg(feature = "alloc")]
+pub use {
+    alloc::format,
+    alloc::string::{FromUtf16Error, FromUtf8Error},
+};
 
 /// A possible error when slicing a [`ImString`](crate::ImString).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
 //! # Immutable Strings
 //!
 //! Inspired by the [bytes](https://docs.rs/bytes) crate, which offers zero-copy byte slices, this
@@ -14,3 +16,8 @@ pub mod string;
 
 /// Thread-safe immutable string.
 pub type ImString = string::ImString<string::Threadsafe>;
+
+#[cfg(feature = "alloc")]
+extern crate alloc;
+#[cfg(not(feature = "std"))]
+extern crate core as std;

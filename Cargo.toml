@@ -12,4 +12,7 @@ license = "MIT"
 serde = { version = "1.0.159", optional = true }
 
 [features]
+default = ["std"]
 serde = ["dep:serde"]
+std = []
+alloc = []

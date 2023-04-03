@@ -1,23 +1,43 @@
-use crate::data::{Cloned, Data};
+use crate::data::Data;
 use crate::error::*;
-use std::borrow::{Borrow, BorrowMut, Cow};
+use std::borrow::Borrow;
 use std::cmp::Ordering;
-use std::convert::{AsMut, AsRef, Infallible};
-use std::ffi::OsStr;
+use std::convert::{AsRef, Infallible};
 use std::fmt::{Debug, Display, Error as FmtError, Formatter, Write};
 use std::hash::{Hash, Hasher};
 use std::iter::{Extend, FromIterator};
-use std::net::{SocketAddr, ToSocketAddrs};
 use std::ops::{
-    Add, AddAssign, Bound, Deref, Index, IndexMut, Range, RangeBounds, RangeFrom, RangeFull,
-    RangeInclusive, RangeTo,
+    Add, AddAssign, Bound, Deref, Index, Range, RangeBounds, RangeFrom, RangeFull, RangeInclusive,
+    RangeTo,
 };
-use std::path::Path;
-use std::rc::Rc;
 use std::str::FromStr;
-use std::string::{String, ToString};
-use std::sync::Arc;
-use std::vec::IntoIter;
+
+#[cfg(feature = "std")]
+use {
+    std::borrow::Cow,
+    std::ffi::OsStr,
+    std::net::ToSocketAddrs,
+    std::path::Path,
+    std::rc::Rc,
+    std::string::{String, ToString},
+    std::sync::Arc,
+    std::vec::Vec,
+};
+
+#[cfg(feature = "alloc")]
+use {
+    alloc::borrow::Cow,
+    alloc::rc::Rc,
+    alloc::string::{String, ToString},
+    alloc::sync::Arc,
+    alloc::vec::Vec,
+};
+
+#[cfg(all(feature = "alloc", test))]
+use {alloc::boxed::Box, alloc::format, alloc::vec};
+
+#[cfg(test)]
+use crate::data::Cloned;
 
 /// Threadsafe shared storage for string.
 pub type Threadsafe = Arc<String>;
@@ -164,7 +184,7 @@ impl<S: Data<String>> ImString<S> {
     }
 
     unsafe fn try_modify_unchecked<F: FnOnce(&mut String)>(&mut self, f: F) -> bool {
-        if let Some(mut string) = self.string.get_mut() {
+        if let Some(string) = self.string.get_mut() {
             f(string);
             true
         } else {
@@ -216,7 +236,7 @@ impl<S: Data<String>> ImString<S> {
             return self.as_str().to_string();
         }
 
-        if let Some(mut string) = self.string.get_mut() {
+        if let Some(string) = self.string.get_mut() {
             if string.len() != self.offset.end {
                 string.truncate(self.offset.end);
             }
@@ -351,7 +371,7 @@ impl<S: Data<String>> ImString<S> {
         let length = self.offset.start + length;
 
         // truncate backing string if possible
-        if let Some(mut string) = self.string.get_mut() {
+        if let Some(string) = self.string.get_mut() {
             string.truncate(length);
         }
 
@@ -745,12 +765,14 @@ impl<S: Data<String>> AsRef<str> for ImString<S> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<S: Data<String>> AsRef<Path> for ImString<S> {
     fn as_ref(&self) -> &Path {
         self.as_str().as_ref()
     }
 }
 
+#[cfg(feature = "std")]
 impl<S: Data<String>> AsRef<OsStr> for ImString<S> {
     fn as_ref(&self) -> &OsStr {
         self.as_str().as_ref()
@@ -763,6 +785,7 @@ impl<S: Data<String>> AsRef<[u8]> for ImString<S> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<S: Data<String>> ToSocketAddrs for ImString<S> {
     type Iter = <String as ToSocketAddrs>::Iter;
     fn to_socket_addrs(&self) -> std::io::Result<<String as ToSocketAddrs>::Iter> {
@@ -1122,7 +1145,7 @@ tests! {
 
     #[test]
     fn test_add<S: Data<String>>(string: ImString<S>) {
-        let mut std_string = string.as_str().to_string();
+        let std_string = string.as_str().to_string();
         let std_string = std_string + "hello";
         let string = string + "hello";
         assert_eq!(string, std_string);
@@ -1130,13 +1153,14 @@ tests! {
 
     #[test]
     fn test_to_socket_addrs<S: Data<String>>(string: ImString<S>) {
-        #[cfg(not(miri))]
+
+        #[cfg(all(not(miri), feature = "std"))]
         {
             let addrs = string.to_socket_addrs().map(|s| s.collect::<Vec<_>>());
             let str_addrs = string.as_str().to_socket_addrs().map(|s| s.collect::<Vec<_>>());
             match addrs {
                 Ok(addrs) => assert_eq!(addrs, str_addrs.unwrap()),
-                Err(err) => assert!(str_addrs.is_err()),
+                Err(_err) => assert!(str_addrs.is_err()),
             }
         }
     }
@@ -1214,14 +1238,20 @@ tests! {
 
     #[test]
     fn test_as_ref_path<S: Data<String>>(string: ImString<S>) {
-        let s: &Path = string.as_ref();
-        assert_eq!(s, string.as_str().as_ref() as &Path);
+        #[cfg(feature = "std")]
+        {
+            let s: &Path = string.as_ref();
+            assert_eq!(s, string.as_str().as_ref() as &Path);
+        }
     }
 
     #[test]
     fn test_as_ref_os_str<S: Data<String>>(string: ImString<S>) {
-        let s: &OsStr = string.as_ref();
-        assert_eq!(s, string.as_str().as_ref() as &OsStr);
+        #[cfg(feature = "std")]
+        {
+            let s: &OsStr = string.as_ref();
+            assert_eq!(s, string.as_str().as_ref() as &OsStr);
+        }
     }
 
     #[test]
