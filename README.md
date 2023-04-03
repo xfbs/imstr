@@ -1,11 +1,18 @@
 # Immutable Strings
 
+[![crates.io](https://img.shields.io/crates/v/imstr.svg)](https://crates.io/crates/imstr)
+
 Inspired by the [bytes](https://docs.rs/bytes) crate, which offers zero-copy
 byte slices, this crate does the same but for strings. It is backed by standard
 library string that is stored by smart pointer, and every instance contains a
 range into that String. This allows for cheap zero-copy cloning and slicing of
 the string. This is especially useful for parsing operations, where a large
-string needs to be sliced into a lot of substrings.
+string needs to be sliced into a lot of substrings. 
+
+> TL;DR: This crate offers an `ImString`
+> type that acts as a `String` (in that it can be modified and used in the same
+> way), an `Arc<String>` (in that it is cheap to clone) and an `&str` (in that
+> it is cheap to slice) all in one, owned type.
 
 ![Diagram of ImString Internals](diagram.png)
 
@@ -98,7 +105,7 @@ Here is the data, with links to the crates for further examination:
 | [`bytesstr`] |✅|🟡|❌|❌|❌| Wrapper around `Bytes`. Cannot be directly sliced. |
 | [`fast-str`] |✅|❌|❌|❌|❌| Looks like there could be some unsafety. |
 | [`flexstr`] |✅|❌|❌|✅|❌| |
-| [`bytestring`] |✅|❌|❌|❌|❌| Wrapper around `Bytes`. Used by `actix`. |
+| [`bytestring`] |✅|🟡|❌|❌|❌| Wrapper around `Bytes`. Used by `actix`. Can be indirectly sliced using `slice_ref()`. |
 | [`arcstr`] |✅|✅|❌|❌|❌| Can store string literal as `&'static str`. |
 | [`cowstr`] |✅|❌|✅|❌|❌| Reimplements `Arc`, custom allocation strategy. |
 | [`strck`] |❌|❌|❌|✅|❌| Typechecked string library. |
@@ -123,5 +130,3 @@ MIT, see [LICENSE.md](LICENSE.md).
 [`cowstr`]: https://crates.io/crates/cowstr
 [`strck`]: https://crates.io/crates/strck
 [`String`]: https://doc.rust-lang.org/std/string/struct.String.html
-
-
