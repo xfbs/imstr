@@ -14,3 +14,6 @@ pub mod string;
 
 /// Thread-safe immutable string.
 pub type ImString = string::ImString<string::Threadsafe>;
+
+#[cfg(feature = "peg")]
+pub mod peg;
