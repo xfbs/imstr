@@ -64,8 +64,8 @@ pub type Local = Rc<String>;
 /// let string_clone = string.clone();
 ///
 /// // Create a slice (substring) without copying the text data.
-/// //let string_slice = string.slice(0..5);
-/// //assert_eq!(string_slice, "hello");
+/// let string_slice = string.slice(0..5);
+/// assert_eq!(string_slice, "hello");
 /// ```
 #[derive(Clone)]
 pub struct ImString<S: Data<String>> {
@@ -990,9 +990,29 @@ tests! {
         let mut string = string;
         let length = string.len();
         string.insert(0, 'h');
+        assert_eq!(string.len(), length + 1);
+        assert_eq!(string.chars().nth(0), Some('h'));
+    }
+
+    #[test]
+    fn test_insert_one<S: Data<String>>(string: ImString<S>) {
+        if !string.is_empty() && string.is_char_boundary(1) {
+            let mut string = string;
+            let length = string.len();
+            string.insert(1, 'h');
+            assert_eq!(string.len(), length + 1);
+            assert_eq!(string.chars().nth(1), Some('h'));
+        }
+    }
+
+    #[test]
+    fn test_insert_end<S: Data<String>>(string: ImString<S>) {
+        let mut string = string;
+        let length = string.len();
+        string.insert(length, 'h');
+        assert_eq!(string.len(), length + 1);
         // FIXME
-        //assert_eq!(string.len(), length + 1);
-        //assert_eq!(string.chars().nth(0), Some('h'));
+        //assert_eq!(string.chars().nth(length), Some('h'));
     }
 
     #[test]
