@@ -1,4 +1,4 @@
-use crate::data::{Cloned, Data};
+use crate::data::Data;
 use crate::error::*;
 use std::borrow::{Borrow, BorrowMut, Cow};
 use std::cmp::Ordering;
@@ -874,452 +874,457 @@ impl<'a, S: Data<String>> FromIterator<&'a str> for ImString<S> {
     }
 }
 
-#[cfg(test)]
-fn test_strings<S: Data<String>>() -> Vec<ImString<S>> {
-    let long = ImString::from("long string here");
-    let world = ImString::from("world");
-    let some = ImString::from("some");
-    let multiline = ImString::from("some\nmulti\nline\nstring\nthat\nis\nlong");
-    vec![
-        ImString::new(),
-        ImString::default(),
-        ImString::from("hello"),
-        ImString::from("0.0.0.0:800"),
-        ImString::from("localhost:1234"),
-        long.clone(),
-        long.slice(4..10),
-        long.slice(0..4),
-        long.slice(4..4),
-        long.slice(5..),
-        long.slice(..),
-        world.clone(),
-        world.clone(),
-        some.slice(4..),
-        some,
-        multiline.slice(5..15),
-        multiline,
-        ImString::from("\u{e4}\u{fc}\u{f6}\u{f8}\u{3a9}"),
-        ImString::from("\u{1f600}\u{1f603}\u{1f604}"),
-        ImString::from("o\u{308}u\u{308}a\u{308}"),
-    ]
-}
+mod tests {
+    use super::*;
+    use crate::data::Cloned;
 
-macro_rules! tests {
-    () => {};
-    (#[test] fn $name:ident <S: Data<String>>() $body:tt $($rest:tt)*) => {
-        #[test]
-        fn $name() {
-            fn $name <S: Data<String>>() $body
-            $name::<Threadsafe>();
-            $name::<Local>();
-            $name::<Cloned<String>>();
-            $name::<Box<String>>();
-        }
-        tests!{$($rest)*}
-    };
-    (#[test] fn $name:ident <S: Data<String>>($string:ident: ImString<S>) $body:tt $($rest:tt)*) => {
-        #[test]
-        fn $name() {
-            fn $name <S: Data<String>>() {
-                fn $name <S: Data<String>>($string: ImString<S>) $body
-                for string in test_strings::<S>().into_iter() {
-                    $name(string);
-                }
+    #[cfg(test)]
+    fn test_strings<S: Data<String>>() -> Vec<ImString<S>> {
+        let long = ImString::from("long string here");
+        let world = ImString::from("world");
+        let some = ImString::from("some");
+        let multiline = ImString::from("some\nmulti\nline\nstring\nthat\nis\nlong");
+        vec![
+            ImString::new(),
+            ImString::default(),
+            ImString::from("hello"),
+            ImString::from("0.0.0.0:800"),
+            ImString::from("localhost:1234"),
+            long.clone(),
+            long.slice(4..10),
+            long.slice(0..4),
+            long.slice(4..4),
+            long.slice(5..),
+            long.slice(..),
+            world.clone(),
+            world.clone(),
+            some.slice(4..),
+            some,
+            multiline.slice(5..15),
+            multiline,
+            ImString::from("\u{e4}\u{fc}\u{f6}\u{f8}\u{3a9}"),
+            ImString::from("\u{1f600}\u{1f603}\u{1f604}"),
+            ImString::from("o\u{308}u\u{308}a\u{308}"),
+        ]
+    }
+
+    macro_rules! tests {
+        () => {};
+        (#[test] fn $name:ident <S: Data<String>>() $body:tt $($rest:tt)*) => {
+            #[test]
+            fn $name() {
+                fn $name <S: Data<String>>() $body
+                $name::<Threadsafe>();
+                $name::<Local>();
+                $name::<Cloned<String>>();
+                $name::<Box<String>>();
             }
-            $name::<Threadsafe>();
-            $name::<Local>();
-            $name::<Cloned<String>>();
-            $name::<Box<String>>();
+            tests!{$($rest)*}
+        };
+        (#[test] fn $name:ident <S: Data<String>>($string:ident: ImString<S>) $body:tt $($rest:tt)*) => {
+            #[test]
+            fn $name() {
+                fn $name <S: Data<String>>() {
+                    fn $name <S: Data<String>>($string: ImString<S>) $body
+                    for string in test_strings::<S>().into_iter() {
+                        $name(string);
+                    }
+                }
+                $name::<Threadsafe>();
+                $name::<Local>();
+                $name::<Cloned<String>>();
+                $name::<Box<String>>();
+            }
+            tests!{$($rest)*}
         }
-        tests!{$($rest)*}
-    }
-}
-
-tests! {
-    #[test]
-    fn test_new<S: Data<String>>() {
-        let string: ImString<S> = ImString::new();
-        assert_eq!(string.string.get().len(), 0);
-        assert_eq!(string.offset, 0..0);
     }
 
-    #[test]
-    fn test_default<S: Data<String>>() {
-        let string: ImString<S> = ImString::new();
-        assert_eq!(string.string.get().len(), 0);
-        assert_eq!(string.offset, 0..0);
-    }
-
-    #[test]
-    fn test_with_capacity<S: Data<String>>() {
-        for capacity in [10, 100, 256] {
-            let string: ImString<S> = ImString::with_capacity(capacity);
-            assert!(string.capacity() >= capacity);
+    tests! {
+        #[test]
+        fn test_new<S: Data<String>>() {
+            let string: ImString<S> = ImString::new();
             assert_eq!(string.string.get().len(), 0);
             assert_eq!(string.offset, 0..0);
         }
-    }
 
-    #[test]
-    fn test_offset<S: Data<String>>(string: ImString<S>) {
-        assert!(string.offset.start <= string.string.get().len());
-        assert!(string.offset.start <= string.offset.end);
-        assert!(string.offset.end <= string.string.get().len());
-    }
+        #[test]
+        fn test_default<S: Data<String>>() {
+            let string: ImString<S> = ImString::new();
+            assert_eq!(string.string.get().len(), 0);
+            assert_eq!(string.offset, 0..0);
+        }
 
-    #[test]
-    fn test_as_str<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string.as_str(), &string.string.get()[string.offset.clone()]);
-        assert_eq!(string.as_str().len(), string.len());
-    }
+        #[test]
+        fn test_with_capacity<S: Data<String>>() {
+            for capacity in [10, 100, 256] {
+                let string: ImString<S> = ImString::with_capacity(capacity);
+                assert!(string.capacity() >= capacity);
+                assert_eq!(string.string.get().len(), 0);
+                assert_eq!(string.offset, 0..0);
+            }
+        }
 
-    #[test]
-    fn test_as_bytes<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string.as_bytes(), &string.string.get().as_bytes()[string.offset.clone()]);
-        assert_eq!(string.as_bytes().len(), string.len());
-    }
+        #[test]
+        fn test_offset<S: Data<String>>(string: ImString<S>) {
+            assert!(string.offset.start <= string.string.get().len());
+            assert!(string.offset.start <= string.offset.end);
+            assert!(string.offset.end <= string.string.get().len());
+        }
 
-    #[test]
-    fn test_len<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string.len(), string.offset.len());
-        assert_eq!(string.len(), string.as_str().len());
-        assert_eq!(string.len(), string.as_bytes().len());
-    }
+        #[test]
+        fn test_as_str<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string.as_str(), &string.string.get()[string.offset.clone()]);
+            assert_eq!(string.as_str().len(), string.len());
+        }
 
-    #[test]
-    fn test_clear<S: Data<String>>(string: ImString<S>) {
-        let mut string = string;
-        string.clear();
-        assert_eq!(string.as_str(), "");
-        assert_eq!(string.len(), 0);
-    }
+        #[test]
+        fn test_as_bytes<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string.as_bytes(), &string.string.get().as_bytes()[string.offset.clone()]);
+            assert_eq!(string.as_bytes().len(), string.len());
+        }
 
-    #[test]
-    fn test_debug<S: Data<String>>(string: ImString<S>) {
-        let debug_string = format!("{string:?}");
-        let debug_str = format!("{:?}", string.as_str());
-        assert_eq!(debug_string, debug_str);
-    }
+        #[test]
+        fn test_len<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string.len(), string.offset.len());
+            assert_eq!(string.len(), string.as_str().len());
+            assert_eq!(string.len(), string.as_bytes().len());
+        }
 
-    #[test]
-    fn test_deref<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string.deref(), string.as_str());
-    }
+        #[test]
+        fn test_clear<S: Data<String>>(string: ImString<S>) {
+            let mut string = string;
+            string.clear();
+            assert_eq!(string.as_str(), "");
+            assert_eq!(string.len(), 0);
+        }
 
-    #[test]
-    fn test_clone<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string, string.clone());
-    }
+        #[test]
+        fn test_debug<S: Data<String>>(string: ImString<S>) {
+            let debug_string = format!("{string:?}");
+            let debug_str = format!("{:?}", string.as_str());
+            assert_eq!(debug_string, debug_str);
+        }
 
-    #[test]
-    fn test_display<S: Data<String>>(string: ImString<S>) {
-        let display_string = format!("{string}");
-        let display_str = format!("{}", string.as_str());
-        assert_eq!(display_string, display_str);
-    }
+        #[test]
+        fn test_deref<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string.deref(), string.as_str());
+        }
 
-    #[test]
-    fn test_insert_start<S: Data<String>>(string: ImString<S>) {
-        let mut string = string;
-        let length = string.len();
-        string.insert(0, 'h');
-        assert_eq!(string.len(), length + 1);
-        assert_eq!(string.chars().nth(0), Some('h'));
-    }
+        #[test]
+        fn test_clone<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string, string.clone());
+        }
 
-    #[test]
-    fn test_insert_one<S: Data<String>>(string: ImString<S>) {
-        if !string.is_empty() && string.is_char_boundary(1) {
+        #[test]
+        fn test_display<S: Data<String>>(string: ImString<S>) {
+            let display_string = format!("{string}");
+            let display_str = format!("{}", string.as_str());
+            assert_eq!(display_string, display_str);
+        }
+
+        #[test]
+        fn test_insert_start<S: Data<String>>(string: ImString<S>) {
             let mut string = string;
             let length = string.len();
-            string.insert(1, 'h');
+            string.insert(0, 'h');
             assert_eq!(string.len(), length + 1);
-            assert_eq!(string.chars().nth(1), Some('h'));
+            assert_eq!(string.chars().nth(0), Some('h'));
         }
-    }
 
-    #[test]
-    fn test_insert_end<S: Data<String>>(string: ImString<S>) {
-        let mut string = string;
-        let length = string.len();
-        string.insert(length, 'h');
-        assert_eq!(string.len(), length + 1);
-        // FIXME
-        //assert_eq!(string.chars().nth(length), Some('h'));
-    }
-
-    #[test]
-    fn test_is_empty<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string.is_empty(), string.len() == 0);
-    }
-
-    #[test]
-    fn test_push<S: Data<String>>(string: ImString<S>) {
-        let mut string = string;
-        let mut std_string = string.as_str().to_string();
-        let c = 'c';
-        std_string.push(c);
-        string.push(c);
-        assert_eq!(string, std_string);
-    }
-
-    #[test]
-    fn test_push_str<S: Data<String>>(string: ImString<S>) {
-        let mut string = string;
-        let mut std_string = string.as_str().to_string();
-        let s = "string";
-        std_string.push_str(s);
-        string.push_str(s);
-        assert_eq!(string, std_string);
-    }
-
-    #[test]
-    fn test_slice_all<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string.slice(..), string);
-    }
-
-    #[test]
-    fn test_slice_start<S: Data<String>>(string: ImString<S>) {
-        for end in 0..string.len() {
-            if string.is_char_boundary(end) {
-                assert_eq!(string.slice(..end), string.as_str()[..end]);
+        #[test]
+        fn test_insert_one<S: Data<String>>(string: ImString<S>) {
+            if !string.is_empty() && string.is_char_boundary(1) {
+                let mut string = string;
+                let length = string.len();
+                string.insert(1, 'h');
+                assert_eq!(string.len(), length + 1);
+                assert_eq!(string.chars().nth(1), Some('h'));
             }
         }
-    }
 
-    #[test]
-    fn test_slice_end<S: Data<String>>(string: ImString<S>) {
-        for start in 0..string.len() {
-            if string.is_char_boundary(start) {
-                assert_eq!(string.slice(start..), string.as_str()[start..]);
+        #[test]
+        fn test_insert_end<S: Data<String>>(string: ImString<S>) {
+            let mut string = string;
+            let length = string.len();
+            string.insert(length, 'h');
+            assert_eq!(string.len(), length + 1);
+            // FIXME
+            //assert_eq!(string.chars().nth(length), Some('h'));
+        }
+
+        #[test]
+        fn test_is_empty<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string.is_empty(), string.len() == 0);
+        }
+
+        #[test]
+        fn test_push<S: Data<String>>(string: ImString<S>) {
+            let mut string = string;
+            let mut std_string = string.as_str().to_string();
+            let c = 'c';
+            std_string.push(c);
+            string.push(c);
+            assert_eq!(string, std_string);
+        }
+
+        #[test]
+        fn test_push_str<S: Data<String>>(string: ImString<S>) {
+            let mut string = string;
+            let mut std_string = string.as_str().to_string();
+            let s = "string";
+            std_string.push_str(s);
+            string.push_str(s);
+            assert_eq!(string, std_string);
+        }
+
+        #[test]
+        fn test_slice_all<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string.slice(..), string);
+        }
+
+        #[test]
+        fn test_slice_start<S: Data<String>>(string: ImString<S>) {
+            for end in 0..string.len() {
+                if string.is_char_boundary(end) {
+                    assert_eq!(string.slice(..end), string.as_str()[..end]);
+                }
             }
         }
-    }
 
-    #[test]
-    fn test_slice_middle<S: Data<String>>(string: ImString<S>) {
-        for start in 0..string.len() {
-            if string.is_char_boundary(start) {
-                for end in start..string.len() {
-                    if string.is_char_boundary(end) {
-                        assert_eq!(string.slice(start..end), string.as_str()[start..end]);
+        #[test]
+        fn test_slice_end<S: Data<String>>(string: ImString<S>) {
+            for start in 0..string.len() {
+                if string.is_char_boundary(start) {
+                    assert_eq!(string.slice(start..), string.as_str()[start..]);
+                }
+            }
+        }
+
+        #[test]
+        fn test_slice_middle<S: Data<String>>(string: ImString<S>) {
+            for start in 0..string.len() {
+                if string.is_char_boundary(start) {
+                    for end in start..string.len() {
+                        if string.is_char_boundary(end) {
+                            assert_eq!(string.slice(start..end), string.as_str()[start..end]);
+                        }
                     }
                 }
             }
         }
-    }
 
-    #[test]
-    fn test_try_slice_all<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string.try_slice(..).unwrap(), string);
-    }
+        #[test]
+        fn test_try_slice_all<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string.try_slice(..).unwrap(), string);
+        }
 
-    #[test]
-    fn test_try_slice_start<S: Data<String>>(string: ImString<S>) {
-        for end in 0..string.len() {
-            if string.is_char_boundary(end) {
-                assert_eq!(string.try_slice(..end).unwrap(), string.as_str()[..end]);
-            } else {
-                // cannot get slice with end in middle of UTF-8 multibyte sequence.
-                assert_eq!(string.try_slice(..end), Err(SliceError::EndNotAligned));
+        #[test]
+        fn test_try_slice_start<S: Data<String>>(string: ImString<S>) {
+            for end in 0..string.len() {
+                if string.is_char_boundary(end) {
+                    assert_eq!(string.try_slice(..end).unwrap(), string.as_str()[..end]);
+                } else {
+                    // cannot get slice with end in middle of UTF-8 multibyte sequence.
+                    assert_eq!(string.try_slice(..end), Err(SliceError::EndNotAligned));
+                }
+            }
+
+            // cannot get slice with end pointing past the end of the string.
+            assert_eq!(string.try_slice(..string.len()+1), Err(SliceError::EndOutOfBounds));
+        }
+
+        #[test]
+        fn test_try_slice_end<S: Data<String>>(string: ImString<S>) {
+            for start in 0..string.len() {
+                if string.is_char_boundary(start) {
+                    assert_eq!(string.try_slice(start..).unwrap(), string.as_str()[start..]);
+                } else {
+                    // cannot get slice with end in middle of UTF-8 multibyte sequence.
+                    assert_eq!(string.try_slice(start..), Err(SliceError::StartNotAligned));
+                }
+            }
+
+            // cannot get slice with end pointing past the end of the string.
+            assert_eq!(string.try_slice(string.len()+1..), Err(SliceError::StartOutOfBounds));
+        }
+
+        #[test]
+        fn test_add_assign<S: Data<String>>(string: ImString<S>) {
+            let mut std_string = string.as_str().to_string();
+            let mut string = string;
+            string += "hello";
+            std_string += "hello";
+            assert_eq!(string, std_string);
+        }
+
+        #[test]
+        fn test_add<S: Data<String>>(string: ImString<S>) {
+            let mut std_string = string.as_str().to_string();
+            let std_string = std_string + "hello";
+            let string = string + "hello";
+            assert_eq!(string, std_string);
+        }
+
+        #[test]
+        fn test_to_socket_addrs<S: Data<String>>(string: ImString<S>) {
+            #[cfg(not(miri))]
+            {
+                let addrs = string.to_socket_addrs().map(|s| s.collect::<Vec<_>>());
+                let str_addrs = string.as_str().to_socket_addrs().map(|s| s.collect::<Vec<_>>());
+                match addrs {
+                    Ok(addrs) => assert_eq!(addrs, str_addrs.unwrap()),
+                    Err(err) => assert!(str_addrs.is_err()),
+                }
             }
         }
 
-        // cannot get slice with end pointing past the end of the string.
-        assert_eq!(string.try_slice(..string.len()+1), Err(SliceError::EndOutOfBounds));
-    }
+        #[test]
+        fn test_from_iterator_char<S: Data<String>>() {
+            let input = ['h', 'e', 'l', 'l', 'o'];
+            let string: ImString<S> = input.into_iter().collect();
+            assert_eq!(string, "hello");
+        }
 
-    #[test]
-    fn test_try_slice_end<S: Data<String>>(string: ImString<S>) {
-        for start in 0..string.len() {
-            if string.is_char_boundary(start) {
-                assert_eq!(string.try_slice(start..).unwrap(), string.as_str()[start..]);
-            } else {
-                // cannot get slice with end in middle of UTF-8 multibyte sequence.
-                assert_eq!(string.try_slice(start..), Err(SliceError::StartNotAligned));
+        #[test]
+        fn test_from_iterator_char_ref<S: Data<String>>() {
+            let input = ['h', 'e', 'l', 'l', 'o'];
+            let string: ImString<S> = input.iter().collect();
+            assert_eq!(string, "hello");
+        }
+
+        #[test]
+        fn test_from_iterator_str<S: Data<String>>() {
+            let input = ["hello", "world", "!"];
+            let string: ImString<S> = input.into_iter().collect();
+            assert_eq!(string, "helloworld!");
+        }
+
+        #[test]
+        fn test_extend_char<S: Data<String>>() {
+            let input = ['h', 'e', 'l', 'l', 'o'];
+            let mut string: ImString<S> = ImString::new();
+            string.extend(input.into_iter());
+            assert_eq!(string, "hello");
+        }
+
+        #[test]
+        fn test_extend_char_ref<S: Data<String>>() {
+            let input = ['h', 'e', 'l', 'l', 'o'];
+            let mut string: ImString<S> = ImString::new();
+            string.extend(input.into_iter());
+            assert_eq!(string, "hello");
+        }
+
+        #[test]
+        fn test_extend_str<S: Data<String>>() {
+            let input = ["hello", "world", "!"];
+            let mut string: ImString<S> = ImString::new();
+            string.extend(input.into_iter());
+            assert_eq!(string, "helloworld!");
+        }
+
+        #[test]
+        fn test_from_utf8_lossy<S: Data<String>>() {
+            let string: ImString<S> = ImString::from_utf8_lossy(b"hello");
+            assert_eq!(string, "hello");
+        }
+
+        #[test]
+        fn test_from_utf8_unchecked<S: Data<String>>() {
+            let string: ImString<S> = unsafe {
+                ImString::from_utf8_unchecked(b"hello".to_vec())
+            };
+            assert_eq!(string, "hello");
+        }
+
+        #[test]
+        fn test_as_ref_str<S: Data<String>>(string: ImString<S>) {
+            let s: &str = string.as_ref();
+            assert_eq!(s, string.as_str());
+        }
+
+        #[test]
+        fn test_as_ref_bytes<S: Data<String>>(string: ImString<S>) {
+            let s: &[u8] = string.as_ref();
+            assert_eq!(s, string.as_bytes());
+        }
+
+        #[test]
+        fn test_as_ref_path<S: Data<String>>(string: ImString<S>) {
+            let s: &Path = string.as_ref();
+            assert_eq!(s, string.as_str().as_ref() as &Path);
+        }
+
+        #[test]
+        fn test_as_ref_os_str<S: Data<String>>(string: ImString<S>) {
+            let s: &OsStr = string.as_ref();
+            assert_eq!(s, string.as_str().as_ref() as &OsStr);
+        }
+
+        #[test]
+        fn test_partial_eq<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string, string.as_str());
+            assert_eq!(string, string.to_string());
+            assert_eq!(string, string);
+        }
+
+        #[test]
+        fn test_from<S: Data<String>>(string: ImString<S>) {
+            let std_string: String = string.clone().into();
+            assert_eq!(string, std_string);
+        }
+
+        #[test]
+        fn test_raw_offset<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string.offset, string.raw_offset());
+        }
+
+        #[test]
+        fn test_raw_string<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string.string.get(), string.raw_string().get());
+        }
+
+        #[test]
+        fn into_std_string<S: Data<String>>(string: ImString<S>) {
+            let std_clone = string.as_str().to_string();
+            let std_string = string.into_std_string();
+            assert_eq!(std_clone, std_string);
+        }
+
+        #[test]
+        fn test_truncate<S: Data<String>>(string: ImString<S>) {
+            let mut clone = string.as_str().to_string();
+            let mut string = string;
+
+            for length in (0..string.len()).rev() {
+                if string.is_char_boundary(length) {
+                    string.truncate(length);
+                    clone.truncate(length);
+                    assert_eq!(string, clone);
+                }
             }
         }
 
-        // cannot get slice with end pointing past the end of the string.
-        assert_eq!(string.try_slice(string.len()+1..), Err(SliceError::StartOutOfBounds));
-    }
-
-    #[test]
-    fn test_add_assign<S: Data<String>>(string: ImString<S>) {
-        let mut std_string = string.as_str().to_string();
-        let mut string = string;
-        string += "hello";
-        std_string += "hello";
-        assert_eq!(string, std_string);
-    }
-
-    #[test]
-    fn test_add<S: Data<String>>(string: ImString<S>) {
-        let mut std_string = string.as_str().to_string();
-        let std_string = std_string + "hello";
-        let string = string + "hello";
-        assert_eq!(string, std_string);
-    }
-
-    #[test]
-    fn test_to_socket_addrs<S: Data<String>>(string: ImString<S>) {
-        #[cfg(not(miri))]
-        {
-            let addrs = string.to_socket_addrs().map(|s| s.collect::<Vec<_>>());
-            let str_addrs = string.as_str().to_socket_addrs().map(|s| s.collect::<Vec<_>>());
-            match addrs {
-                Ok(addrs) => assert_eq!(addrs, str_addrs.unwrap()),
-                Err(err) => assert!(str_addrs.is_err()),
-            }
+        #[test]
+        fn test_str_ref<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string, string.str_ref(string.as_str()));
         }
-    }
 
-    #[test]
-    fn test_from_iterator_char<S: Data<String>>() {
-        let input = ['h', 'e', 'l', 'l', 'o'];
-        let string: ImString<S> = input.into_iter().collect();
-        assert_eq!(string, "hello");
-    }
-
-    #[test]
-    fn test_from_iterator_char_ref<S: Data<String>>() {
-        let input = ['h', 'e', 'l', 'l', 'o'];
-        let string: ImString<S> = input.iter().collect();
-        assert_eq!(string, "hello");
-    }
-
-    #[test]
-    fn test_from_iterator_str<S: Data<String>>() {
-        let input = ["hello", "world", "!"];
-        let string: ImString<S> = input.into_iter().collect();
-        assert_eq!(string, "helloworld!");
-    }
-
-    #[test]
-    fn test_extend_char<S: Data<String>>() {
-        let input = ['h', 'e', 'l', 'l', 'o'];
-        let mut string: ImString<S> = ImString::new();
-        string.extend(input.into_iter());
-        assert_eq!(string, "hello");
-    }
-
-    #[test]
-    fn test_extend_char_ref<S: Data<String>>() {
-        let input = ['h', 'e', 'l', 'l', 'o'];
-        let mut string: ImString<S> = ImString::new();
-        string.extend(input.into_iter());
-        assert_eq!(string, "hello");
-    }
-
-    #[test]
-    fn test_extend_str<S: Data<String>>() {
-        let input = ["hello", "world", "!"];
-        let mut string: ImString<S> = ImString::new();
-        string.extend(input.into_iter());
-        assert_eq!(string, "helloworld!");
-    }
-
-    #[test]
-    fn test_from_utf8_lossy<S: Data<String>>() {
-        let string: ImString<S> = ImString::from_utf8_lossy(b"hello");
-        assert_eq!(string, "hello");
-    }
-
-    #[test]
-    fn test_from_utf8_unchecked<S: Data<String>>() {
-        let string: ImString<S> = unsafe {
-            ImString::from_utf8_unchecked(b"hello".to_vec())
-        };
-        assert_eq!(string, "hello");
-    }
-
-    #[test]
-    fn test_as_ref_str<S: Data<String>>(string: ImString<S>) {
-        let s: &str = string.as_ref();
-        assert_eq!(s, string.as_str());
-    }
-
-    #[test]
-    fn test_as_ref_bytes<S: Data<String>>(string: ImString<S>) {
-        let s: &[u8] = string.as_ref();
-        assert_eq!(s, string.as_bytes());
-    }
-
-    #[test]
-    fn test_as_ref_path<S: Data<String>>(string: ImString<S>) {
-        let s: &Path = string.as_ref();
-        assert_eq!(s, string.as_str().as_ref() as &Path);
-    }
-
-    #[test]
-    fn test_as_ref_os_str<S: Data<String>>(string: ImString<S>) {
-        let s: &OsStr = string.as_ref();
-        assert_eq!(s, string.as_str().as_ref() as &OsStr);
-    }
-
-    #[test]
-    fn test_partial_eq<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string, string.as_str());
-        assert_eq!(string, string.to_string());
-        assert_eq!(string, string);
-    }
-
-    #[test]
-    fn test_from<S: Data<String>>(string: ImString<S>) {
-        let std_string: String = string.clone().into();
-        assert_eq!(string, std_string);
-    }
-
-    #[test]
-    fn test_raw_offset<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string.offset, string.raw_offset());
-    }
-
-    #[test]
-    fn test_raw_string<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string.string.get(), string.raw_string().get());
-    }
-
-    #[test]
-    fn into_std_string<S: Data<String>>(string: ImString<S>) {
-        let std_clone = string.as_str().to_string();
-        let std_string = string.into_std_string();
-        assert_eq!(std_clone, std_string);
-    }
-
-    #[test]
-    fn test_truncate<S: Data<String>>(string: ImString<S>) {
-        let mut clone = string.as_str().to_string();
-        let mut string = string;
-
-        for length in (0..string.len()).rev() {
-            if string.is_char_boundary(length) {
-                string.truncate(length);
-                clone.truncate(length);
-                assert_eq!(string, clone);
-            }
+        #[test]
+        fn test_try_str_ref<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string, string.try_str_ref(string.as_str()).unwrap());
+            assert_eq!(string.try_str_ref("test"), None);
         }
-    }
 
-    #[test]
-    fn test_str_ref<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string, string.str_ref(string.as_str()));
-    }
+        #[test]
+        fn test_slice_ref<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string, string.slice_ref(string.as_bytes()));
+        }
 
-    #[test]
-    fn test_try_str_ref<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string, string.try_str_ref(string.as_str()).unwrap());
-        assert_eq!(string.try_str_ref("test"), None);
-    }
-
-    #[test]
-    fn test_slice_ref<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string, string.slice_ref(string.as_bytes()));
-    }
-
-    #[test]
-    fn test_try_slice_ref<S: Data<String>>(string: ImString<S>) {
-        assert_eq!(string, string.try_slice_ref(string.as_bytes()).unwrap());
-        assert_eq!(string.try_slice_ref(b"test"), None);
+        #[test]
+        fn test_try_slice_ref<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(string, string.try_slice_ref(string.as_bytes()).unwrap());
+            assert_eq!(string.try_slice_ref(b"test"), None);
+        }
     }
 }
