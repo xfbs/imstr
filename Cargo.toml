@@ -13,10 +13,14 @@ name = "bench"
 harness = false
 
 [dependencies]
+peg-runtime = { version = "0.8.1", optional = true }
 serde = { version = "1.0.159", optional = true }
 
 [features]
+# enable serde integration (serialize and deserialize ImString)
 serde = ["dep:serde"]
+# enable peg integration (parse ImString)
+peg = ["dep:peg-runtime"]
 
 [dev-dependencies]
 criterion = "0.4.0"
