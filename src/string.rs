@@ -163,6 +163,21 @@ impl<S: Data<String>> ImString<S> {
         self.offset = 0..0;
     }
 
+    fn mut_str(&mut self) -> &mut str {
+        if self.string.get_mut().is_none() {
+            let string = self.as_str().to_string();
+            self.offset = 0..string.len();
+            self.string = S::new(string);
+        }
+
+        let string = self.string.get_mut().unwrap();
+        return &mut string[self.offset.clone()];
+    }
+
+    fn cloned_mut_str(&mut self) -> &mut str {
+        todo!()
+    }
+
     unsafe fn try_modify_unchecked<F: FnOnce(&mut String)>(&mut self, f: F) -> bool {
         if let Some(mut string) = self.string.get_mut() {
             f(string);
@@ -739,6 +754,12 @@ impl<S: Data<String>> Borrow<str> for ImString<S> {
     }
 }
 
+impl<S: Data<String>> BorrowMut<str> for ImString<S> {
+    fn borrow_mut(&mut self) -> &mut str {
+        self.mut_str()
+    }
+}
+
 impl<S: Data<String>> AsRef<str> for ImString<S> {
     fn as_ref(&self) -> &str {
         self.as_str()
@@ -760,6 +781,12 @@ impl<S: Data<String>> AsRef<OsStr> for ImString<S> {
 impl<S: Data<String>> AsRef<[u8]> for ImString<S> {
     fn as_ref(&self) -> &[u8] {
         self.as_str().as_ref()
+    }
+}
+
+impl<S: Data<String>> AsMut<str> for ImString<S> {
+    fn as_mut(&mut self) -> &mut str {
+        self.mut_str()
     }
 }
 
