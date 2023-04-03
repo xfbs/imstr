@@ -8,8 +8,15 @@ repository = "https://github.com/xfbs/imstr"
 authors = ["Patrick Elsen <pelsen@xfbs.net>"]
 license = "MIT"
 
+[[bench]]
+name = "bench"
+harness = false
+
 [dependencies]
 serde = { version = "1.0.159", optional = true }
 
 [features]
 serde = ["dep:serde"]
+
+[dev-dependencies]
+criterion = "0.4.0"
