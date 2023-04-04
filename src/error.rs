@@ -1,7 +1,7 @@
 #[cfg(feature = "std")]
 pub use std::string::{FromUtf16Error, FromUtf8Error};
 
-#[cfg(feature = "alloc")]
+#[cfg(not(feature = "std"))]
 pub use {
     alloc::format,
     alloc::string::{FromUtf16Error, FromUtf8Error},

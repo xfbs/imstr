@@ -7,6 +7,12 @@ use peg_runtime::ParseLiteral;
 use peg_runtime::ParseSlice;
 use peg_runtime::RuleResult;
 
+#[cfg(feature = "std")]
+use std::string::String;
+
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
+
 impl<T: Data<String>> Parse for ImString<T> {
     type PositionRepr = LineCol;
     fn start(&self) -> usize {

@@ -24,7 +24,7 @@ use {
     std::vec::Vec,
 };
 
-#[cfg(feature = "alloc")]
+#[cfg(not(feature = "std"))]
 use {
     alloc::borrow::Cow,
     alloc::rc::Rc,
@@ -33,7 +33,7 @@ use {
     alloc::vec::Vec,
 };
 
-#[cfg(all(feature = "alloc", test))]
+#[cfg(all(not(feature = "std"), test))]
 use {alloc::boxed::Box, alloc::format, alloc::vec};
 
 /// Threadsafe shared storage for string.

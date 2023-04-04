@@ -1,7 +1,7 @@
 #[cfg(feature = "std")]
 pub use {std::boxed::Box, std::rc::Rc, std::sync::Arc};
 
-#[cfg(feature = "alloc")]
+#[cfg(not(feature = "std"))]
 pub use {alloc::boxed::Box, alloc::rc::Rc, alloc::string::String, alloc::sync::Arc};
 
 /// Set of common operations on shared data.

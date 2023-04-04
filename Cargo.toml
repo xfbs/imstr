@@ -23,7 +23,6 @@ serde = ["dep:serde"]
 # enable peg integration (parse ImString)
 peg = ["dep:peg-runtime"]
 std = []
-alloc = []
 
 [dev-dependencies]
 criterion = "0.4.0"

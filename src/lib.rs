@@ -17,7 +17,7 @@ pub mod string;
 /// Thread-safe immutable string.
 pub type ImString = string::ImString<string::Threadsafe>;
 
-#[cfg(feature = "alloc")]
+#[cfg(not(feature = "std"))]
 extern crate alloc;
 #[cfg(not(feature = "std"))]
 extern crate core as std;
