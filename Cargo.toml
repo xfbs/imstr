@@ -13,7 +13,7 @@ name = "bench"
 harness = false
 
 [dependencies]
-peg-runtime = { version = "0.8.1", optional = true }
+peg-runtime = { version = "0.8.1", optional = true, no-default-features = true }
 serde = { version = "1.0.159", optional = true }
 
 [features]
