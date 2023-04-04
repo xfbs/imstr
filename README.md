@@ -84,15 +84,15 @@ assert_eq!(hello, "Hello!");
 This is a comparison of this crate to other, similar crates. The comparison is
 made on these features:
 
-- **Zero-Copy**: is it a zero-copy operation to clone a string?
-- **Slicing**: is it possibly to cheaply slice a string?
-- **Modify**: is it possible to modify strings?
-- **Generic**: is it possible to swap out the storage mechanism?
-- **Compatible**: is it compatible with [`String`]?
+- **Cheap Clone**: is it a zero-copy operation to clone a string?
+- **Cheap Slice** 🍕: is it possibly to cheaply slice a string?
+- **Mutable**: is it possible to modify strings?
+- **Generic Storage**: is it possible to swap out the storage mechanism?
+- **String Compatible**: is it compatible with [`String`]?
 
 Here is the data, with links to the crates for further examination:
 
-| Crate | Zero-Copy | Slicing | Modify | Generic | Compatible | Notes |
+| Crate | Cheap Clone| Cheap Slice | Mutable | Generic Storage | String Compatible | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | [`imstr`] | ✅ | ✅ | ✅ | ✅ | ✅ | This crate. |
 | [`tendril`] |✅|✅|✅|✅|❌| Complex implementation. API not quite compatible with [`String`], but otherwise closest to what this crate does. |
