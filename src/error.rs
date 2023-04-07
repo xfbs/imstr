@@ -1,12 +1,18 @@
+//! Error types
 pub use std::string::{FromUtf16Error, FromUtf8Error};
 
 /// A possible error when slicing a [`ImString`](crate::ImString).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SliceError {
+    /// Start offset out of bounds.
     StartOutOfBounds,
+    /// End offset out of bounds.
     EndOutOfBounds,
+    /// End index smaller than start index.
     EndBeforeStart,
+    /// Start index not on [`char`] boundary.
     StartNotAligned,
+    /// End index not on [`char`] boundary.
     EndNotAligned,
 }
 

@@ -1,3 +1,8 @@
+//! Trait for common operations on shared data.
+//!
+//! This module houses the [`Data`] trait, which allows for generic storage of shared data.
+//! This shared data is typically managed by an [`Arc`] or a [`Rc`], which are re-exported from
+//! this module for convenience.
 pub use std::boxed::Box;
 pub use std::rc::Rc;
 pub use std::sync::Arc;
