@@ -1,3 +1,4 @@
+//! [`ImString`] type and associated data store types.
 use crate::data::Data;
 use crate::error::*;
 use std::borrow::{Borrow, BorrowMut, Cow};
@@ -35,15 +36,6 @@ pub type Local = Rc<String>;
 /// it creates a new view into the underlying `String`, without copying the
 /// text data. This makes working with large strings and substrings more
 /// memory-efficient.
-///
-/// The `ImString` struct contains two fields:
-///
-/// - `string`: An [`Arc`](std::sync::Arc) wrapping a `String`, which ensures
-///   that the underlying `String` data is shared and reference-counted.
-///
-/// - `offset`: A [`Range`](std::ops::Range) that defines the start and end
-///   positions of the `ImString`'s view into the underlying `String`. The
-///   `offset` must always point to a valid UTF-8 region inside the `string`.
 ///
 /// Due to its design, `ImString` is especially suitable for use cases where
 /// strings are frequently cloned or sliced, but modifications to the text data
@@ -110,7 +102,7 @@ impl<S: Data<String>> ImString<S> {
         &self.string.get().as_bytes()[self.offset.clone()]
     }
 
-    /// Return the backing [String](std::string::String)'s contents, in bytes.
+    /// Return the backing [String](std::string::String)'s capacity, in bytes.
     ///
     /// # Example
     ///
@@ -125,7 +117,7 @@ impl<S: Data<String>> ImString<S> {
 
     /// Create a new `ImString` instance from a standard library [`String`](std::string::String).
     ///
-    /// This method will construct the `ImString` without needing to clone the `String` instance.
+    /// This method will construct the [`ImString`] without needing to clone the [`String`] instance.
     ///
     /// # Example
     ///
@@ -182,7 +174,7 @@ impl<S: Data<String>> ImString<S> {
         }
     }
 
-    /// Creates a new string with the given capacity.
+    /// Creates a new [`ImString`] with the given capacity.
     ///
     /// # Example
     ///
@@ -210,7 +202,7 @@ impl<S: Data<String>> ImString<S> {
         self.offset.len()
     }
 
-    /// Convert this string into a standard library [String](std::string::String).
+    /// Convert this string into a standard library [`String`](std::string::String).
     ///
     /// If this string has no other clones, it will return the `String` without needing to clone
     /// it.
@@ -264,7 +256,24 @@ impl<S: Data<String>> ImString<S> {
         unsafe { std::str::from_utf8_unchecked(slice) }
     }
 
-    /// Converts a vector of bytes to a ImString.
+    /// Converts a vector of bytes to an [`ImString`].
+    ///
+    /// See [`String::from_utf8()`] for more details on this function.
+    ///
+    /// # Example
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// // some bytes, in a vector
+    /// let sparkle_heart = vec![240, 159, 146, 150];
+    ///
+    /// // we know this is valid UTF-8, so we use unwrap()
+    /// let string = ImString::from_utf8(sparkle_heart).unwrap();
+    ///
+    /// assert_eq!(string, "💖");
+    /// ```
     pub fn from_utf8(vec: Vec<u8>) -> Result<Self, FromUtf8Error> {
         Ok(ImString::from_std_string(String::from_utf8(vec)?))
     }
@@ -302,7 +311,29 @@ impl<S: Data<String>> ImString<S> {
         ImString::from_std_string(string)
     }
 
-    /// Converts a vector of bytes to a ImString.
+    /// Converts a vector of bytes to a [`ImString`], without checking if the data is valid UTF-8.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because it does not check that the bytes passed to it are valid
+    /// UTF-8. If this constraint is violated, it may cause memory unsafety issues with future
+    /// users of the [`ImString`], as the library assumes that all strings are valid UTF-8.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// // some bytes, in a vector
+    /// let sparkle_heart = vec![240, 159, 146, 150];
+    ///
+    /// let sparkle_heart = unsafe {
+    ///     ImString::from_utf8_unchecked(sparkle_heart)
+    /// };
+    ///
+    /// assert_eq!(sparkle_heart, "💖");
+    /// ```
     pub unsafe fn from_utf8_unchecked(vec: Vec<u8>) -> Self {
         ImString::from_std_string(String::from_utf8_unchecked(vec))
     }
@@ -325,7 +356,26 @@ impl<S: Data<String>> ImString<S> {
 
     /// Inserts a character into this string at the specified index.
     ///
-    /// This is an *O(n)$ operation as it requires copying every element in the buffer.
+    /// This is an *O(n)* operation as it requires copying every element in the buffer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `index` is larger than the [`ImString`]'s length, of if it does not lie on a
+    /// [`char`] boundary. You can use [`is_char_boundary()`](str::is_char_boundary) to check if a
+    /// given index is such a boundary.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let mut string = ImString::with_capacity(3);
+    /// string.insert(0, 'f');
+    /// string.insert(1, 'o');
+    /// string.insert(2, 'o');
+    /// assert_eq!(string, "foo");
+    /// ```
     pub fn insert(&mut self, index: usize, c: char) {
         unsafe {
             self.unchecked_append(|mut string| {
@@ -337,7 +387,13 @@ impl<S: Data<String>> ImString<S> {
 
     /// Inserts a string into this string at the specified index.
     ///
-    /// This is an *O(n)$ operation as it requires copying every element in the buffer.
+    /// This is an *O(n)* operation as it requires copying every element in the buffer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `index` is larger than the [`ImString`]'s length, of if it does not lie on a
+    /// [`char`] boundary. You can use [`is_char_boundary()`](str::is_char_boundary) to check if an
+    /// index lies on a char boundary.
     ///
     /// # Example
     ///
@@ -356,6 +412,26 @@ impl<S: Data<String>> ImString<S> {
         }
     }
 
+    /// Shortens this [`ImString`] to the specified length.
+    ///
+    /// If `length` is greater than the string's current length, this has no effect.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `length` does not lie on a char boundary. You can use the
+    /// [`is_char_boundary()`](str::is_char_boundary) method to determine if an offset lies on
+    /// a char boundary.
+    ///
+    /// # Example
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let mut string = ImString::from("hello");
+    /// string.truncate(2);
+    /// assert_eq!(string, "he");
+    /// ```
     pub fn truncate(&mut self, length: usize) {
         // actual new length
         let length = self.offset.start + length;
@@ -368,6 +444,22 @@ impl<S: Data<String>> ImString<S> {
         self.offset.end = self.offset.end.min(length);
     }
 
+    /// Appends the given [`char`] to the end of this [`ImString`].
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let mut string = ImString::from("abc");
+    ///
+    /// string.push('1');
+    /// string.push('2');
+    /// string.push('3');
+    ///
+    /// assert_eq!(string, "abc123");
+    /// ```
     pub fn push(&mut self, c: char) {
         unsafe {
             self.unchecked_append(|mut string| {
@@ -377,6 +469,20 @@ impl<S: Data<String>> ImString<S> {
         }
     }
 
+    /// Appends the given string slice onto to the end of this [`ImString`].
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let mut string = ImString::from("foo");
+    ///
+    /// string.push_str("bar");
+    ///
+    /// assert_eq!(string, "foobar");
+    /// ```
     pub fn push_str(&mut self, slice: &str) {
         unsafe {
             self.unchecked_append(|mut string| {
@@ -402,14 +508,52 @@ impl<S: Data<String>> ImString<S> {
         self.offset.is_empty()
     }
 
-    /// Create a subslice of this string.
+    /// Create a new [`ImString`] containing a slice of this string.
     ///
-    /// This will panic if the specified range is invalid. Use the [try_slice](ImString::try_slice)
-    /// method if you want to handle invalid ranges.
+    /// This will not copy the underlying string, only create another reference to it.
+    ///
+    /// # Panics
+    ///
+    /// This will panic if the specified range is invalid. In order to be valid, the lower and
+    /// upper bounds must be within this string, and must lie on a [`char`] boundary.  Use the
+    /// [try_slice](ImString::try_slice) method if you want to handle invalid ranges.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("Hello, World!");
+    ///
+    /// let hello = string.slice(0..5);
+    /// assert_eq!(hello, "Hello");
+    ///
+    /// let world = string.slice(7..12);
+    /// assert_eq!(world, "World");
+    /// ```
     pub fn slice(&self, range: impl RangeBounds<usize>) -> Self {
         self.try_slice(range).unwrap()
     }
 
+    /// Try to create a new [`ImString`] containing a slice of this string.
+    ///
+    /// This will not copy the underlying string, only create another reference to it.
+    ///
+    /// If the specified range is not invalid, for example because it points outside of this string
+    /// or because the lower or upper bound do not lie on a [`char`] boundary, this method will
+    /// return [`SliceError`].
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("Hello, World!");
+    ///
+    /// let hello = string.try_slice(0..5).unwrap();
+    /// assert_eq!(hello, "Hello");
+    ///
+    /// let world = string.try_slice(7..12).unwrap();
+    /// assert_eq!(world, "World");
+    /// ```
     pub fn try_slice(&self, range: impl RangeBounds<usize>) -> Result<Self, SliceError> {
         let start = match range.start_bound() {
             Bound::Included(value) => *value,
@@ -440,6 +584,27 @@ impl<S: Data<String>> ImString<S> {
         Ok(slice)
     }
 
+    /// Create a new [`ImString`] containing a slice of this string without checking the bounds.
+    ///
+    /// # Safety
+    ///
+    /// This method is unsafe because it does not check the bounds.  If the specified range is not
+    /// invalid, for example because it points outside of this string or because the lower or upper
+    /// bound do not lie on a [`char`] boundary, this method will return an invalid [`ImString`],
+    /// which can lead to memory unsafety errors.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("Hello, World!");
+    ///
+    /// let hello = string.try_slice(0..5).unwrap();
+    /// assert_eq!(hello, "Hello");
+    ///
+    /// let world = string.try_slice(7..12).unwrap();
+    /// assert_eq!(world, "World");
+    /// ```
     pub unsafe fn slice_unchecked(&self, range: impl RangeBounds<usize>) -> Self {
         let start = match range.start_bound() {
             Bound::Included(value) => *value,
@@ -458,14 +623,74 @@ impl<S: Data<String>> ImString<S> {
         }
     }
 
+    /// Try to promote a [`str`] slice of this [`ImString`] into an [`ImString`].
+    ///
+    /// If the given [`str`] slice is not from this [`ImString`], this method will return `None`.
+    ///
+    /// This method is useful when interfacing with algorithms that only work on string slices,
+    /// but you want to store the output strings as [`ImString`] values.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("Hello, world!");
+    /// let slice = &string[7..12];
+    /// let slice = string.try_str_ref(slice).unwrap();
+    /// assert_eq!(slice, "world");
+    /// assert_eq!(string.try_str_ref("other"), None);
+    /// ```
     pub fn try_str_ref(&self, string: &str) -> Option<Self> {
         self.try_slice_ref(string.as_bytes())
     }
 
+    /// Promote a [`str`] slice of this [`ImString`] into an [`ImString`].
+    ///
+    /// If the given [`str`] slice is not from this [`ImString`], this method will create a new
+    /// [`ImString`]. If you do not want this behavior, use
+    /// [`try_str_ref()`](ImString::try_str_ref).
+    ///
+    /// This method is useful when interfacing with algorithms that only work on string slices,
+    /// but you want to store the output strings as [`ImString`] values.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("Hello, world!");
+    /// let slice = &string[7..12];
+    /// let slice = string.str_ref(slice);
+    /// assert_eq!(slice, "world");
+    /// assert_eq!(string.str_ref("other"), "other");
+    /// ```
     pub fn str_ref(&self, string: &str) -> Self {
-        self.try_str_ref(string).unwrap()
+        self.try_str_ref(string)
+            .unwrap_or_else(|| Self::from(string))
     }
 
+    /// Try to promote a [`u8`] slice of this [`ImString`] into an [`ImString`].
+    ///
+    /// If the given [`u8`] slice is not from this [`ImString`], this method will return `None`.
+    ///
+    /// This method is useful when interfacing with algorithms that only work on byte slices,
+    /// but you want to store the output strings as [`ImString`] values.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("Hello, world!");
+    /// let slice = &string.as_bytes()[7..12];
+    /// let slice = string.try_slice_ref(slice).unwrap();
+    /// assert_eq!(slice, "world");
+    /// assert_eq!(string.try_slice_ref(b"other"), None);
+    /// ```
     pub fn try_slice_ref(&self, slice: &[u8]) -> Option<Self> {
         try_slice_offset(self.string.get().as_bytes(), slice).map(|range| ImString {
             offset: range,
@@ -473,10 +698,46 @@ impl<S: Data<String>> ImString<S> {
         })
     }
 
+    /// Promote a [`u8`] slice of this [`ImString`] into an [`ImString`].
+    ///
+    /// This method is useful when interfacing with algorithms that only work on byte slices,
+    /// but you want to store the output strings as [`ImString`] values.
+    ///
+    /// # Panics
+    ///
+    /// If the given [`u8`] slice is not from this [`ImString`], or if the slice does not contain
+    /// valid UTF-8, this method will panic.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("Hello, world!");
+    /// let slice = &string.as_bytes()[7..12];
+    /// let slice = string.slice_ref(slice);
+    /// assert_eq!(slice, "world");
+    /// ```
     pub fn slice_ref(&self, slice: &[u8]) -> Self {
         self.try_slice_ref(slice).unwrap()
     }
 
+    /// Try splitting the string into two at the given byte index.
+    ///
+    /// Returns a new [`ImString`] containing bytes `position..` and keeps bytes `0..position` in
+    /// `self`. If `position` is not on a [`char`] boundary, or if it is beyond the last code point
+    /// of the string, returns `None`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let mut hello = ImString::from("Hello, World!");
+    /// let world = hello.split_off(7);
+    /// assert_eq!(hello, "Hello, ");
+    /// assert_eq!(world, "World!");
+    /// ```
     pub fn try_split_off(&mut self, position: usize) -> Option<Self> {
         if position > self.offset.end {
             return None;
@@ -495,6 +756,28 @@ impl<S: Data<String>> ImString<S> {
         Some(new)
     }
 
+    /// Split the string into two at the given byte index.
+    ///
+    /// Returns a new [`ImString`] containing bytes `position..` and keeps bytes `0..position` in
+    /// `self`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `position` is not on a [`char`] boundary, or if it is beyond the last code point
+    /// of the string. Use [`is_char_boundary()`](str::is_char_boundary) to check if an index is
+    /// on a char boundary.
+    ///
+    /// Use [`try_split_off()`](ImString::try_split_off) if you want to handle invalid positions.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let mut hello = ImString::from("Hello, World!");
+    /// let world = hello.split_off(7);
+    /// assert_eq!(hello, "Hello, ");
+    /// assert_eq!(world, "World!");
+    /// ```
     pub fn split_off(&mut self, position: usize) -> Self {
         self.try_split_off(position).unwrap()
     }
@@ -551,7 +834,7 @@ impl<S: Data<String>> ImString<S> {
     /// The final line ending is optional. A string that ends with a final line ending will return
     /// the same lines as an otherwise identical string without a final line ending.
     ///
-    /// This works the same way as [String::lines](std::string::String::lines), except that it
+    /// This works the same way as [str::lines](str::lines), except that it
     /// returns ImString instances.
     pub fn lines(&self) -> Lines<'_, S> {
         ImStringIterator::new(self.string.clone(), self.as_str().lines())
@@ -705,8 +988,26 @@ impl<S: Data<String>> Index<RangeTo<usize>> for ImString<S> {
     }
 }
 
+/// Iterator over lines of an [`ImString`].
+///
+/// Unlike the [`Lines`](std::str::Lines) iterator of [`str`], this iterator returns instances of
+/// [`ImString`].
+///
+/// # Example
+///
+/// ```rust
+/// # use imstr::ImString;
+/// let string = ImString::from("multi\nline\ninput");
+/// let lines: Vec<ImString> = string.lines().collect();
+/// assert_eq!(lines[0], "multi");
+/// assert_eq!(lines[1], "line");
+/// assert_eq!(lines[2], "input");
+/// ```
 pub type Lines<'a, S> = ImStringIterator<'a, S, std::str::Lines<'a>>;
 
+/// Iterator wrapper over string slices of an [`ImString`].
+///
+/// This iterator wrapper turns string slices of an [`ImString`] into [`ImString`]s.
 pub struct ImStringIterator<'a, S: Data<String>, I: Iterator<Item = &'a str>> {
     string: S,
     iterator: I,

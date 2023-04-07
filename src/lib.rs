@@ -15,6 +15,17 @@ pub mod error;
 pub mod string;
 
 /// Thread-safe immutable string.
+///
+/// This is a convenient type alias for `ImString<Threadsafe>`. [`ImString`](string::ImString)
+/// supports different backing data containers which have unique properties. The
+/// [`Threadsafe`](string::Threadsafe) container offers a thread-safe shared storage backed by an
+/// [`Arc`](std::sync::Arc).
+///
+/// If you do not need to use the [`ImString`] across multiple threads, then you can also use
+/// [`Local`](string::Local) as the backing store. This does the same but is not threadsafe. It is
+/// marginally faster.
+///
+/// Any type which implements the [Data](data::Data) trait can be used as backing stores.
 pub type ImString = string::ImString<string::Threadsafe>;
 
 #[cfg(feature = "peg")]
