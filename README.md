@@ -2,12 +2,15 @@
 
 [![crates.io](https://img.shields.io/crates/v/imstr.svg)](https://crates.io/crates/imstr)
 
-Inspired by the [bytes](https://docs.rs/bytes) crate, which offers zero-copy
-byte slices, this crate does the same but for strings. It is backed by standard
-library string that is stored by smart pointer, and every instance contains a
-range into that String. This allows for cheap zero-copy cloning and slicing of
-the string. This is especially useful for parsing operations, where a large
-string needs to be sliced into a lot of substrings. 
+This crate offers a cheaply cloneable and sliceable UTF-8 string type. It is
+inspired by the [`bytes`] crate, which offers zero-copy byte slices, and the
+[`im`] crate which offers immutable copy-on-write data structures. It offers
+a standard-library `String`-compatible API.
+
+Internally, the crate uses a standard library string stored in a smart pointer,
+and a range into that `String`.  This allows for cheap zero-copy cloning and
+slicing of the string. This is especially useful for parsing operations, where
+a large string needs to be sliced into a lot of substrings. 
 
 > TL;DR: This crate offers an `ImString`
 > type that acts as a `String` (in that it can be modified and used in the same
@@ -130,3 +133,5 @@ MIT, see [LICENSE.md](LICENSE.md).
 [`cowstr`]: https://crates.io/crates/cowstr
 [`strck`]: https://crates.io/crates/strck
 [`String`]: https://doc.rust-lang.org/std/string/struct.String.html
+[`bytes`]: https://crates.io/crates/bytes
+[`im`]: https://crates.io/crates/im
