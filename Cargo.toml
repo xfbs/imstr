@@ -1,6 +1,6 @@
 [package]
 name = "imstr"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Cheaply clonable and slicable immutable strings"
 documentation = "https://docs.rs/imstr"
