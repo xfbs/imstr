@@ -523,6 +523,27 @@ impl<S: Data<String>> ImString<S> {
         self.offset.end = self.offset.end.min(length);
     }
 
+    /// Removes the last character from the string and returns it.
+    ///
+    /// If the string is empty, this returns `None`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let mut string = ImString::from("foo");
+    ///
+    /// assert_eq!(string.pop(), Some('o'));
+    /// assert_eq!(string.pop(), Some('o'));
+    /// assert_eq!(string.pop(), Some('f'));
+    /// assert_eq!(string.pop(), None);
+    /// ```
+    pub fn pop(&mut self) -> Option<char> {
+        let last_char = self.chars().rev().next()?;
+        self.offset.end -= last_char.len_utf8();
+        Some(last_char)
+    }
+
     /// Appends the given [`char`] to the end of this [`ImString`].
     ///
     /// # Examples
