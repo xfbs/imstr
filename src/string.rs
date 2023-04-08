@@ -269,6 +269,43 @@ impl<S: Data<String>> ImString<S> {
         unsafe { std::str::from_utf8_unchecked(slice) }
     }
 
+    /// Decode a UTF-16-encoded string into an [`ImString`], returning a [`FromUtf16Error`] if
+    /// `string` contains any invalid data.
+    ///
+    /// This method is useful for interfacing with legacy systems that still use UTF-16 as their
+    /// primary encoding.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// // 𝄞music
+    /// let v = &[0xD834, 0xDD1E, 0x006d, 0x0075, 0x0073, 0x0069, 0x0063];
+    /// assert_eq!(String::from("𝄞music"), String::from_utf16(v).unwrap());
+    ///
+    /// // 𝄞mu<invalid>ic
+    /// let v = &[0xD834, 0xDD1E, 0x006d, 0x0075, 0xD800, 0x0069, 0x0063];
+    /// assert!(String::from_utf16(v).is_err());
+    /// ```
+    pub fn from_utf16(string: &[u16]) -> Result<Self, FromUtf16Error> {
+        Ok(ImString::from_std_string(String::from_utf16(string)?))
+    }
+
+    /// Decode a UTF-16-encoded string into an [`ImString`], replacing invalid data with the
+    /// [replacement character (`U+FFD`)](std::char::REPLACEMENT_CHARACTER).
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// // 𝄞mus<invalid>ic<invalid>
+    /// let v = &[0xD834, 0xDD1E, 0x006d, 0x0075, 0x0073, 0xDD1E, 0x0069, 0x0063, 0xD834];
+    /// assert_eq!(String::from("𝄞mus\u{FFFD}ic\u{FFFD}"), String::from_utf16_lossy(v));
+    /// ```
+    pub fn from_utf16_lossy(string: &[u16]) -> Self {
+        ImString::from_std_string(String::from_utf16_lossy(string))
+    }
+
     /// Converts a vector of bytes to an [`ImString`].
     ///
     /// See [`String::from_utf8()`] for more details on this function.
