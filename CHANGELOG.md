@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Adds `pop()`, `into_bytes()`, `as_mut_str()`, `from_utf16()` and `from_utf16_lossy()` methods for ImString.
+
 ## Version 0.1.1
 
 - Added integration with [peg](https://crates.io/crates/peg) crate.
