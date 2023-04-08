@@ -388,6 +388,35 @@ impl<S: Data<String>> ImString<S> {
         ImString::from_std_string(String::from_utf8_unchecked(vec))
     }
 
+    /// Converts an [`ImString`] into a byte vector.
+    ///
+    /// This consumes the [`ImString`], so that in some circumstances the contents do not need to
+    /// be copied.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("hello");
+    /// let bytes = string.into_bytes();
+    /// assert_eq!(bytes, &[104, 101, 108, 108, 111]);
+    /// ```
+    pub fn into_bytes(mut self) -> Vec<u8> {
+        // if this imstring is not sliced at the beginning, we can do this without needing to copy
+        // anything.
+        if self.offset.start == 0 {
+            if let Some(mut string) = self.string.get_mut() {
+                let mut string = std::mem::take(string);
+                string.truncate(self.offset.end);
+                return string.into_bytes();
+            }
+        }
+
+        self.as_bytes().to_vec()
+    }
+
     unsafe fn unchecked_append<F: FnOnce(String) -> String>(&mut self, f: F) {
         match self.string.get_mut() {
             Some(mut string_ref) if self.offset.start == 0 => {
