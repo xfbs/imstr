@@ -30,13 +30,23 @@ impl std::fmt::Display for SliceError {
 
 #[test]
 fn slice_error_traits() {
-    let error = SliceError::StartOutOfBounds;
-    // implements clone
-    let new = error.clone();
-    // implements partial eq
-    assert_eq!(error, new);
-    // implements debug
-    format!("{error:?}");
-    // implements display
-    format!("{new}");
+    use SliceError::*;
+    let errors = [
+        StartOutOfBounds,
+        EndOutOfBounds,
+        EndBeforeStart,
+        StartNotAligned,
+        EndNotAligned,
+    ];
+
+    for error in errors.into_iter() {
+        // implements clone
+        let new = error.clone();
+        // implements partial eq
+        assert_eq!(error, new);
+        // implements debug
+        format!("{error:?}");
+        // implements display
+        format!("{new}");
+    }
 }

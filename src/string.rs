@@ -227,19 +227,14 @@ impl<S: Data<String>> ImString<S> {
     /// assert_eq!(string, "hello");
     /// ```
     pub fn into_std_string(mut self) -> String {
-        if self.offset.start != 0 {
-            return self.as_str().to_string();
-        }
-
-        if let Some(string) = self.string.get_mut() {
-            if string.len() != self.offset.end {
+        if self.offset.start == 0 {
+            if let Some(string) = self.string.get_mut() {
                 string.truncate(self.offset.end);
+                return std::mem::take(string);
             }
-
-            std::mem::take(string)
-        } else {
-            self.as_str().to_string()
         }
+
+        self.as_str().to_string()
     }
 
     /// Creates a new, empty `ImString`.
@@ -278,13 +273,14 @@ impl<S: Data<String>> ImString<S> {
     /// # Examples
     ///
     /// ```rust
+    /// # use imstr::ImString;
     /// // 𝄞music
     /// let v = &[0xD834, 0xDD1E, 0x006d, 0x0075, 0x0073, 0x0069, 0x0063];
-    /// assert_eq!(String::from("𝄞music"), String::from_utf16(v).unwrap());
+    /// assert_eq!(ImString::from("𝄞music"), ImString::from_utf16(v).unwrap());
     ///
     /// // 𝄞mu<invalid>ic
     /// let v = &[0xD834, 0xDD1E, 0x006d, 0x0075, 0xD800, 0x0069, 0x0063];
-    /// assert!(String::from_utf16(v).is_err());
+    /// assert!(ImString::from_utf16(v).is_err());
     /// ```
     pub fn from_utf16(string: &[u16]) -> Result<Self, FromUtf16Error> {
         Ok(ImString::from_std_string(String::from_utf16(string)?))
@@ -298,9 +294,10 @@ impl<S: Data<String>> ImString<S> {
     /// Basic usage:
     ///
     /// ```rust
+    /// # use imstr::ImString;
     /// // 𝄞mus<invalid>ic<invalid>
     /// let v = &[0xD834, 0xDD1E, 0x006d, 0x0075, 0x0073, 0xDD1E, 0x0069, 0x0063, 0xD834];
-    /// assert_eq!(String::from("𝄞mus\u{FFFD}ic\u{FFFD}"), String::from_utf16_lossy(v));
+    /// assert_eq!(ImString::from("𝄞mus\u{FFFD}ic\u{FFFD}"), ImString::from_utf16_lossy(v));
     /// ```
     pub fn from_utf16_lossy(string: &[u16]) -> Self {
         ImString::from_std_string(String::from_utf16_lossy(string))
@@ -404,17 +401,7 @@ impl<S: Data<String>> ImString<S> {
     /// assert_eq!(bytes, &[104, 101, 108, 108, 111]);
     /// ```
     pub fn into_bytes(mut self) -> Vec<u8> {
-        // if this imstring is not sliced at the beginning, we can do this without needing to copy
-        // anything.
-        if self.offset.start == 0 {
-            if let Some(mut string) = self.string.get_mut() {
-                let mut string = std::mem::take(string);
-                string.truncate(self.offset.end);
-                return string.into_bytes();
-            }
-        }
-
-        self.as_bytes().to_vec()
+        self.into_std_string().into_bytes()
     }
 
     unsafe fn unchecked_append<F: FnOnce(String) -> String>(&mut self, f: F) {
@@ -1280,12 +1267,20 @@ mod tests {
         let world = ImString::from("world");
         let some = ImString::from("some");
         let multiline = ImString::from("some\nmulti\nline\nstring\nthat\nis\nlong");
+        let large: ImString<S> = (0..100).map(|_| "hello\n").collect();
         vec![
             ImString::new(),
             ImString::default(),
+            ImString::from(""),
+            ImString::from("a"),
+            ImString::from("ü"),
             ImString::from("hello"),
             ImString::from("0.0.0.0:800"),
             ImString::from("localhost:1234"),
+            ImString::from("0.0.0.0:1234"),
+            large.slice(0..6),
+            large.slice(6..12),
+            large.slice(..),
             long.clone(),
             long.slice(4..10),
             long.slice(0..4),
@@ -1374,6 +1369,22 @@ mod tests {
         }
 
         #[test]
+        fn test_as_mut_str<S: Data<String>>(string: ImString<S>) {
+            // ascii uppercase copy of string
+            let string_uppercase = string.as_str().to_ascii_uppercase();
+
+            // uppercase in-place
+            let mut string = string;
+            let string_slice = string.as_mut_str();
+            string_slice.make_ascii_uppercase();
+
+            // make sure both versions are identical
+            assert_eq!(string_uppercase, &*string_slice);
+            drop(string_slice);
+            assert_eq!(string, string_uppercase);
+        }
+
+        #[test]
         fn test_as_bytes<S: Data<String>>(string: ImString<S>) {
             assert_eq!(string.as_bytes(), &string.string.get().as_bytes()[string.offset.clone()]);
             assert_eq!(string.as_bytes().len(), string.len());
@@ -1449,8 +1460,33 @@ mod tests {
         }
 
         #[test]
+        fn test_insert_str_start<S: Data<String>>(string: ImString<S>) {
+            // test to make sure we can insert_str at the start
+            let original = string.as_str().to_string();
+            let mut string = string;
+            let inserted = "hello";
+            string.insert_str(0, inserted);
+            assert_eq!(string.len(), original.len() + inserted.len());
+            assert_eq!(&string[0..inserted.len()], inserted);
+            assert_eq!(&string[inserted.len()..], original);
+        }
+
+        #[test]
+        fn test_insert_str_end<S: Data<String>>(string: ImString<S>) {
+            // test to make sure we can insert_str at the end
+            let original = string.as_str().to_string();
+            let mut string = string;
+            let inserted = "hello";
+            string.insert_str(string.len(), inserted);
+            assert_eq!(string.len(), original.len() + inserted.len());
+            assert_eq!(&string[0..original.len()], original);
+            assert_eq!(&string[original.len()..], inserted);
+        }
+
+        #[test]
         fn test_is_empty<S: Data<String>>(string: ImString<S>) {
             assert_eq!(string.is_empty(), string.len() == 0);
+            assert_eq!(string.is_empty(), string.as_str().is_empty());
         }
 
         #[test]
@@ -1471,6 +1507,66 @@ mod tests {
             std_string.push_str(s);
             string.push_str(s);
             assert_eq!(string, std_string);
+        }
+
+        #[test]
+        fn test_pop<S: Data<String>>(string: ImString<S>) {
+            let mut characters: Vec<char> = string.chars().collect();
+            let mut string = string;
+            loop {
+                let c1 = characters.pop();
+                let c2 = string.pop();
+                assert_eq!(c1, c2);
+                if c1.is_none() {
+                    break;
+                }
+            }
+        }
+
+        #[test]
+        fn test_index_range_full<S: Data<String>>(string: ImString<S>) {
+            assert_eq!(&string[..], &string.as_str()[..]);
+        }
+
+        #[test]
+        fn test_index_range_from<S: Data<String>>(string: ImString<S>) {
+            for i in (0..string.len()).filter(|i| string.is_char_boundary(*i)) {
+                assert_eq!(&string[i..], &string.as_str()[i..]);
+            }
+        }
+
+        #[test]
+        fn test_index_range_to<S: Data<String>>(string: ImString<S>) {
+            for i in (0..string.len()).filter(|i| string.is_char_boundary(*i)) {
+                assert_eq!(&string[..i], &string.as_str()[..i]);
+            }
+        }
+
+        #[test]
+        fn test_index_range_exclusive<S: Data<String>>(string: ImString<S>) {
+            for start in (0..string.len()).filter(|i| string.is_char_boundary(*i)) {
+                for end in (start..string.len()).filter(|i| string.is_char_boundary(*i)) {
+                    assert_eq!(&string[start..end], &string.as_str()[start..end]);
+                }
+            }
+        }
+
+        #[test]
+        fn test_index_range_inclusive<S: Data<String>>(string: ImString<S>) {
+            if !string.is_empty() {
+                for start in (0..string.len()-1).filter(|i| string.is_char_boundary(*i)) {
+                    for end in (start..string.len()-1).filter(|i| string.is_char_boundary(*i + 1)) {
+                        assert_eq!(&string[start..=end], &string.as_str()[start..=end]);
+                    }
+                }
+            }
+        }
+
+        #[test]
+        fn test_into_bytes<S: Data<String>>(string: ImString<S>) {
+            let std_bytes = string.as_str().to_string().into_bytes();
+            let bytes = string.into_bytes();
+            assert_eq!(bytes, std_bytes);
         }
 
         #[test]
@@ -1542,6 +1638,18 @@ mod tests {
 
             // cannot get slice with end pointing past the end of the string.
             assert_eq!(string.try_slice(string.len()+1..), Err(SliceError::StartOutOfBounds));
+        }
+
+        #[test]
+        fn test_write<S: Data<String>>() {
+            let mut string: ImString<S> = ImString::new();
+            string.write_str("Hello");
+            string.write_char(',');
+            string.write_char(' ');
+            string.write_str("World");
+            string.write_char('!');
+            assert_eq!(string, "Hello, World!");
+
         }
 
         #[test]
@@ -1634,6 +1742,12 @@ mod tests {
         }
 
         #[test]
+        fn test_borrow<S: Data<String>>(string: ImString<S>) {
+            let s: &str = string.borrow();
+            assert_eq!(s, string.as_str());
+        }
+
+        #[test]
         fn test_as_ref_str<S: Data<String>>(string: ImString<S>) {
             let s: &str = string.as_ref();
             assert_eq!(s, string.as_str());
@@ -1658,10 +1772,48 @@ mod tests {
         }
 
         #[test]
+        fn test_deref_mut<S: Data<String>>(string: ImString<S>) {
+            let mut string = string;
+            let data = string.as_str().to_string();
+            let mutable: &mut str = string.deref_mut();
+            assert_eq!(&*mutable, &data);
+        }
+
+        #[test]
+        fn test_as_mut<S: Data<String>>(string: ImString<S>) {
+            let mut string = string;
+            let data = string.as_str().to_string();
+            let mutable: &mut str = string.as_mut();
+            assert_eq!(&*mutable, &data);
+        }
+
+        #[test]
+        fn test_borrow_mut<S: Data<String>>(string: ImString<S>) {
+            let mut string = string;
+            let data = string.as_str().to_string();
+            let mutable: &mut str = string.borrow_mut();
+            assert_eq!(&*mutable, &data);
+        }
+
+        #[test]
         fn test_partial_eq<S: Data<String>>(string: ImString<S>) {
             assert_eq!(string, string.as_str());
             assert_eq!(string, string.to_string());
             assert_eq!(string, string);
+        }
+
+        #[test]
+        fn test_partial_ord<S: Data<String>>(string: ImString<S>) {
+            let other = ImString::from("test");
+            assert_eq!(string.as_str().partial_cmp(other.as_str()), string.partial_cmp(&other));
+            assert_eq!(other.as_str().partial_cmp(string.as_str()), other.partial_cmp(&string));
+        }
+
+        #[test]
+        fn test_ord<S: Data<String>>(string: ImString<S>) {
+            let other = ImString::from("test");
+            assert_eq!(string.as_str().cmp(other.as_str()), string.cmp(&other));
+            assert_eq!(other.as_str().cmp(string.as_str()), other.cmp(&string));
         }
 
         #[test]
