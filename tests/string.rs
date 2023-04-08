@@ -285,6 +285,47 @@ fn test_lines() {
     }
 }
 
+#[test]
+fn test_str_truncate() {
+    let mut s = ImString::from("12345");
+    s.truncate(5);
+    assert_eq!(s, "12345");
+    s.truncate(3);
+    assert_eq!(s, "123");
+    s.truncate(0);
+    assert_eq!(s, "");
+
+    let mut s = ImString::from("12345");
+    let p = s.as_ptr();
+    s.truncate(3);
+    s.push_str("6");
+    let p_ = s.as_ptr();
+    assert_eq!(p_, p);
+}
+
+#[test]
+fn test_str_truncate_invalid_len() {
+    let mut s = ImString::from("12345");
+    s.truncate(6);
+    assert_eq!(s, "12345");
+}
+
+#[test]
+fn test_slicing() {
+    let s = "foobar".to_string();
+    assert_eq!(&s[..], "foobar");
+    assert_eq!(&s[..3], "foo");
+    assert_eq!(&s[3..], "bar");
+    assert_eq!(&s[1..4], "oob");
+}
+
+#[test]
+#[should_panic]
+fn test_str_truncate_split_codepoint() {
+    let mut s = ImString::from("\u{FC}"); // ü
+    s.truncate(1);
+}
+
 /*
 pub trait IntoCow<'a, B: ?Sized>
 where
@@ -304,9 +345,6 @@ impl<'a> IntoCow<'a, str> for &'a str {
         Cow::Borrowed(self)
     }
 }
-
-
-
 
 #[test]
 fn test_from_utf8_lossy() {
@@ -361,8 +399,6 @@ fn test_from_utf8_lossy() {
         ImString::from("\u{FFFD}\u{FFFD}\u{FFFD}foo\u{FFFD}\u{FFFD}\u{FFFD}bar").into_cow()
     );
 }
-
-
 
 #[test]
 fn test_from_utf16() {
@@ -474,38 +510,6 @@ fn test_pop() {
 }
 
 #[test]
-fn test_str_truncate() {
-    let mut s = ImString::from("12345");
-    s.truncate(5);
-    assert_eq!(s, "12345");
-    s.truncate(3);
-    assert_eq!(s, "123");
-    s.truncate(0);
-    assert_eq!(s, "");
-
-    let mut s = ImString::from("12345");
-    let p = s.as_ptr();
-    s.truncate(3);
-    s.push_str("6");
-    let p_ = s.as_ptr();
-    assert_eq!(p_, p);
-}
-
-#[test]
-fn test_str_truncate_invalid_len() {
-    let mut s = ImString::from("12345");
-    s.truncate(6);
-    assert_eq!(s, "12345");
-}
-
-#[test]
-#[should_panic]
-fn test_str_truncate_split_codepoint() {
-    let mut s = ImString::from("\u{FC}"); // ü
-    s.truncate(1);
-}
-
-#[test]
 fn remove() {
     let mut s = "ศไทย中华Việt Nam; foobar".to_string();
     assert_eq!(s.remove(0), 'ศ');
@@ -553,15 +557,6 @@ fn test_retain() {
         });
     }));
     assert!(std::str::from_utf8(s.as_bytes()).is_ok());
-}
-
-#[test]
-fn test_slicing() {
-    let s = "foobar".to_string();
-    assert_eq!("foobar", &s[..]);
-    assert_eq!("foo", &s[..3]);
-    assert_eq!("bar", &s[3..]);
-    assert_eq!("oob", &s[1..4]);
 }
 
 #[test]
@@ -732,29 +727,4 @@ fn test_into_boxed_str() {
     let ys = xs.into_boxed_str();
     assert_eq!(&*ys, "hello my name is bob");
 }
-
-#[test]
-fn test_reserve_exact() {
-    // This is all the same as test_reserve
-
-    let mut s = ImString::new();
-    assert_eq!(s.capacity(), 0);
-
-    s.reserve_exact(2);
-    assert!(s.capacity() >= 2);
-
-    for _i in 0..16 {
-        s.push('0');
-    }
-
-    assert!(s.capacity() >= 16);
-    s.reserve_exact(16);
-    assert!(s.capacity() >= 32);
-
-    s.push('0');
-
-    s.reserve_exact(16);
-    assert!(s.capacity() >= 33)
-}
-
 */
