@@ -22,7 +22,7 @@ use std::sync::Arc;
 /// Threadsafe shared storage for string.
 pub type Threadsafe = Arc<String>;
 
-/// Non-threadsafe shared storage for string.
+/// Shared storage for string (not threadsafe).
 pub type Local = Rc<String>;
 
 /// Cheaply cloneable and sliceable UTF-8 string type.
@@ -154,7 +154,20 @@ impl<S: Data<String>> ImString<S> {
         self.offset = 0..0;
     }
 
-    fn mut_str(&mut self) -> &mut str {
+    /// Returns a mutable string slice of the contents of this string.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let mut string = ImString::from("foobar");
+    /// let string_slice = string.as_mut_str();
+    /// string_slice.make_ascii_uppercase();
+    /// assert_eq!(string, "FOOBAR");
+    /// ```
+    pub fn as_mut_str(&mut self) -> &mut str {
         if self.string.get_mut().is_none() {
             let string = self.as_str().to_string();
             self.offset = 0..string.len();
@@ -1046,7 +1059,7 @@ impl<S: Data<String>> Deref for ImString<S> {
 
 impl<S: Data<String>> DerefMut for ImString<S> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.mut_str()
+        self.as_mut_str()
     }
 }
 
@@ -1058,7 +1071,7 @@ impl<S: Data<String>> Borrow<str> for ImString<S> {
 
 impl<S: Data<String>> BorrowMut<str> for ImString<S> {
     fn borrow_mut(&mut self) -> &mut str {
-        self.mut_str()
+        self.as_mut_str()
     }
 }
 
@@ -1088,7 +1101,7 @@ impl<S: Data<String>> AsRef<[u8]> for ImString<S> {
 
 impl<S: Data<String>> AsMut<str> for ImString<S> {
     fn as_mut(&mut self) -> &mut str {
-        self.mut_str()
+        self.as_mut_str()
     }
 }
 
