@@ -400,7 +400,7 @@ impl<S: Data<String>> ImString<S> {
     /// let bytes = string.into_bytes();
     /// assert_eq!(bytes, &[104, 101, 108, 108, 111]);
     /// ```
-    pub fn into_bytes(mut self) -> Vec<u8> {
+    pub fn into_bytes(self) -> Vec<u8> {
         self.into_std_string().into_bytes()
     }
 
@@ -1673,11 +1673,11 @@ mod tests {
         #[test]
         fn test_write<S: Data<String>>() {
             let mut string: ImString<S> = ImString::new();
-            string.write_str("Hello");
-            string.write_char(',');
-            string.write_char(' ');
-            string.write_str("World");
-            string.write_char('!');
+            string.write_str("Hello").unwrap();
+            string.write_char(',').unwrap();
+            string.write_char(' ').unwrap();
+            string.write_str("World").unwrap();
+            string.write_char('!').unwrap();
             assert_eq!(string, "Hello, World!");
 
         }
