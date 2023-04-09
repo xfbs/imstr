@@ -526,7 +526,7 @@ impl<S: Data<String>> ImString<S> {
     /// assert_eq!(string.pop(), None);
     /// ```
     pub fn pop(&mut self) -> Option<char> {
-        let last_char = self.chars().rev().next()?;
+        let last_char = self.as_str().chars().rev().next()?;
         self.offset.end -= last_char.len_utf8();
         Some(last_char)
     }
@@ -926,6 +926,21 @@ impl<S: Data<String>> ImString<S> {
     pub fn lines(&self) -> Lines<'_, S> {
         ImStringIterator::new(self.string.clone(), self.as_str().lines())
     }
+
+    /// Iterator over chars in an ImString.
+    pub fn chars(&self) -> Chars<S> {
+        Chars {
+            string: self.clone(),
+        }
+    }
+
+    /// Iterators over `char`s with their corresponding index in an `ImString`.
+    pub fn char_indices(&self) -> CharIndices<S> {
+        CharIndices {
+            offset: 0,
+            string: self.clone(),
+        }
+    }
 }
 
 impl<S: Data<String>> Default for ImString<S> {
@@ -1150,6 +1165,48 @@ impl<'a, S: Data<String>, I: Iterator<Item = &'a str>> Iterator for ImStringIter
 impl<'a, S: Data<String>, I: Iterator<Item = &'a str>> ImStringIterator<'a, S, I> {
     fn new(string: S, iterator: I) -> Self {
         ImStringIterator { string, iterator }
+    }
+}
+
+/// Iterator over `char`s with their corresponding byte index inside an `ImString`.
+#[derive(Clone, Debug)]
+pub struct CharIndices<S: Data<String>> {
+    offset: usize,
+    string: ImString<S>,
+}
+
+impl<S: Data<String>> Iterator for CharIndices<S> {
+    type Item = (usize, char);
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.string.as_str().chars().next() {
+            Some(c) => {
+                let len = c.len_utf8();
+                self.string = self.string.slice(len..);
+                let offset = self.offset;
+                self.offset += len;
+                Some((offset, c))
+            }
+            None => None,
+        }
+    }
+}
+
+/// Iterator over `char`s inside an `ImString`.
+#[derive(Clone, Debug)]
+pub struct Chars<S: Data<String>> {
+    string: ImString<S>,
+}
+
+impl<S: Data<String>> Iterator for Chars<S> {
+    type Item = char;
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.string.as_str().chars().next() {
+            Some(c) => {
+                self.string = self.string.slice(c.len_utf8()..);
+                Some(c)
+            }
+            None => None,
+        }
     }
 }
 

@@ -13,6 +13,7 @@ name = "bench"
 harness = false
 
 [dependencies]
+nom = { version = "7.1.3", optional = true }
 peg-runtime = { version = "0.8.1", optional = true }
 serde = { version = "1.0.159", optional = true }
 
@@ -21,6 +22,7 @@ serde = { version = "1.0.159", optional = true }
 serde = ["dep:serde"]
 # enable peg integration (parse ImString)
 peg = ["dep:peg-runtime"]
+nom = ["dep:nom"]
 
 [dev-dependencies]
 criterion = "0.4.0"
