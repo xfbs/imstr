@@ -29,4 +29,7 @@ pub mod string;
 pub type ImString = string::ImString<string::Threadsafe>;
 
 #[cfg(feature = "peg")]
-pub mod peg;
+mod peg;
+
+#[cfg(feature = "nom")]
+mod nom;
