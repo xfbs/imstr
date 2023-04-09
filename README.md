@@ -82,6 +82,14 @@ let hello = hello + "!";
 assert_eq!(hello, "Hello!");
 ```
 
+## Optional Features
+
+Optional features that can be turned on using feature-flags.
+
+| Feature | Description |
+| `serde` | Enables interoperatibility with [`serde`] crate, allowing to serialize and deserialize `ImString` fields as strings. |
+| `peg` | Enables interoperatibility with [`peg`] crate, allowing `ImString` to be used as the data structure that is parsed. |
+
 ## Similar
 
 This is a comparison of this crate to other, similar crates. The comparison is
@@ -135,3 +143,5 @@ MIT, see [LICENSE.md](LICENSE.md).
 [`String`]: https://doc.rust-lang.org/std/string/struct.String.html
 [`bytes`]: https://crates.io/crates/bytes
 [`im`]: https://crates.io/crates/im
+[`serde`]: https://crates.io/crates/serde
+[`peg`]: https://crates.io/crates/peg
