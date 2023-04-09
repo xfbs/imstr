@@ -1075,6 +1075,36 @@ impl<S: Data<String>> Index<RangeTo<usize>> for ImString<S> {
     }
 }
 
+impl<S: Data<String>> IndexMut<Range<usize>> for ImString<S> {
+    fn index_mut(&mut self, index: Range<usize>) -> &mut str {
+        &mut self.as_mut_str()[index]
+    }
+}
+
+impl<S: Data<String>> IndexMut<RangeFrom<usize>> for ImString<S> {
+    fn index_mut(&mut self, index: RangeFrom<usize>) -> &mut str {
+        &mut self.as_mut_str()[index]
+    }
+}
+
+impl<S: Data<String>> IndexMut<RangeFull> for ImString<S> {
+    fn index_mut(&mut self, index: RangeFull) -> &mut str {
+        &mut self.as_mut_str()[index]
+    }
+}
+
+impl<S: Data<String>> IndexMut<RangeInclusive<usize>> for ImString<S> {
+    fn index_mut(&mut self, index: RangeInclusive<usize>) -> &mut str {
+        &mut self.as_mut_str()[index]
+    }
+}
+
+impl<S: Data<String>> IndexMut<RangeTo<usize>> for ImString<S> {
+    fn index_mut(&mut self, index: RangeTo<usize>) -> &mut str {
+        &mut self.as_mut_str()[index]
+    }
+}
+
 /// Iterator over lines of an [`ImString`].
 ///
 /// Unlike the [`Lines`](std::str::Lines) iterator of [`str`], this iterator returns instances of
