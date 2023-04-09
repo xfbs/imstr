@@ -87,6 +87,7 @@ assert_eq!(hello, "Hello!");
 Optional features that can be turned on using feature-flags.
 
 | Feature | Description |
+| --- | --- |
 | `serde` | Enables interoperatibility with [`serde`] crate, allowing to serialize and deserialize `ImString` fields as strings. |
 | `peg` | Enables interoperatibility with [`peg`] crate, allowing `ImString` to be used as the data structure that is parsed. |
 
