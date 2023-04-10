@@ -941,6 +941,60 @@ impl<S: Data<String>> ImString<S> {
             string: self.clone(),
         }
     }
+
+    /// Returns a slice of this string with leading and trailing whitespace removed.
+    ///
+    /// *Whitespace* is defined according to the terms of the Unicode Derived Core Property
+    /// `White_Space`, which includes newlines.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("\n Hello\tWorld\t\n");
+    /// assert_eq!(string.trim(), "Hello\tWorld");
+    /// ```
+    pub fn trim(&self) -> Self {
+        self.str_ref(self.as_str().trim())
+    }
+
+    /// Returns a slice of this string with leading whitespace removed.
+    ///
+    /// *Whitespace* is defined according to the terms of the Unicode Derived Core Property
+    /// `White_Space`, which includes newlines.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("\n Hello\tworld\t\n");
+    /// assert_eq!(string.trim_start(), "Hello\tworld\t\n");
+    /// ```
+    pub fn trim_start(&self) -> Self {
+        self.str_ref(self.as_str().trim_start())
+    }
+
+    /// Returns a slice of this string with trailing whitespace removed.
+    ///
+    /// *Whitespace* is defined according to the terms of the Unicode Derived Core Property
+    /// `White_Space`, which includes newlines.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// # use imstr::ImString;
+    /// let string = ImString::from("\n Hello\tworld\t\n");
+    /// assert_eq!(string.trim_end(), "\n Hello\tworld");
+    /// ```
+    pub fn trim_end(&self) -> Self {
+        self.str_ref(self.as_str().trim_end())
+    }
 }
 
 impl<S: Data<String>> Default for ImString<S> {
