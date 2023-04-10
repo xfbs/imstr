@@ -200,6 +200,11 @@ fn main() {
     let mut data = Vec::new();
     std::io::copy(&mut input, &mut data).unwrap();
     let string = ImString::from_utf8_lossy(&data);
-    let result = root::<(ImString, ErrorKind)>(string).unwrap();
-    println!("{result:#?}");
+    match root::<VerboseError<ImString>>(string.clone()) {
+        Ok(result) => println!("{result:?}"),
+        Err(Err::Error(error) | Err::Failure(error)) => {
+            println!("{}", convert_error(string, error))
+        }
+        Err(other) => println!("{other}"),
+    }
 }

@@ -5,11 +5,8 @@ use nom::{
     AsBytes, Compare, CompareResult, Err, IResult, InputIter, InputLength, InputTake,
     InputTakeAtPosition, Needed, Offset, ParseTo, Slice,
 };
-use std::boxed::Box;
 use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
-use std::rc::Rc;
 use std::str::FromStr;
-use std::sync::Arc;
 
 /// Test that the specified function behaves the same regardless of whether the type is `&str` or
 /// `ImString`.
@@ -25,13 +22,13 @@ macro_rules! test_equivalence {
         test(input);
 
         println!("Testing {input:?} for ImString<Arc<String>>");
-        test(ImString::<Arc<String>>::from(input));
+        test(ImString::<std::sync::Arc<String>>::from(input));
 
         println!("Testing {input:?} for ImString<Rc<String>>");
-        test(ImString::<Rc<String>>::from(input));
+        test(ImString::<std::rc::Rc<String>>::from(input));
 
         println!("Testing {input:?} for ImString<Box<String>>");
-        test(ImString::<Box<String>>::from(input));
+        test(ImString::<std::boxed::Box<String>>::from(input));
     }};
 }
 
