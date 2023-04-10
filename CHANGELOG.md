@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Version 0.2.0
 
 - Adds `ptr_eq()` to `Data` trait
 - Adds `trim()`, `trim_start()`, `trim_end()` methods to `ImString`
