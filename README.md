@@ -88,8 +88,9 @@ Optional features that can be turned on using feature-flags.
 
 | Feature | Description |
 | --- | --- |
-| `serde` | Enables interoperatibility with [`serde`] crate, allowing to serialize and deserialize `ImString` fields as strings. |
-| `peg` | Enables interoperatibility with [`peg`] crate, allowing `ImString` to be used as the data structure that is parsed. |
+| `serde` | Serialize and deserialize `ImString` fields as strings with the [`serde`] crate. |
+| `peg` | Use `ImString` as the data structure that is parsed with the [`peg`] crate. |
+| `nom` | Allow `ImString` to be used to build parsers with [`nom`]. |
 
 ## Similar
 
@@ -146,3 +147,4 @@ MIT, see [LICENSE.md](LICENSE.md).
 [`im`]: https://crates.io/crates/im
 [`serde`]: https://crates.io/crates/serde
 [`peg`]: https://crates.io/crates/peg
+[`nom`]: https://crates.io/crates/nom
