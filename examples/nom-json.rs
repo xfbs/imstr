@@ -4,14 +4,13 @@ use nom::{
     bytes::complete::{escaped, tag, take_while},
     character::complete::{alphanumeric1 as alphanumeric, char, one_of},
     combinator::{cut, map, opt, value},
-    error::{context, convert_error, ContextError, ErrorKind, ParseError, VerboseError},
+    error::{context, convert_error, ContextError, ParseError, VerboseError},
     multi::separated_list0,
     number::complete::double,
     sequence::{delimited, preceded, separated_pair, terminated},
     Err, IResult,
 };
 use std::collections::HashMap;
-use std::str;
 
 #[derive(Debug, PartialEq)]
 pub enum JsonValue {
@@ -110,16 +109,6 @@ fn string<E: ParseError<ImString> + ContextError<ImString>>(
         "string",
         preceded(char('\"'), cut(terminated(string_inner, char('\"')))),
     )(i)
-}
-
-//#[test]
-fn test_string() {
-    assert_eq!(
-        string::<(ImString, ErrorKind)>(ImString::from("\"json string\", "))
-            .unwrap()
-            .0,
-        ""
-    );
 }
 
 fn array<E: ParseError<ImString> + ContextError<ImString>>(

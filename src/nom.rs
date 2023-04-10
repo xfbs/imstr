@@ -10,6 +10,7 @@ use std::str::FromStr;
 
 /// Test that the specified function behaves the same regardless of whether the type is `&str` or
 /// `ImString`.
+#[cfg(test)]
 macro_rules! test_equivalence {
     ($input:expr, |$name:ident: $type:path $(, $extra:path)*| $body:tt) => {{
         fn test<'a>($name: impl $type $(+ $extra)* + PartialEq<&'a str> + std::fmt::Debug) {
@@ -282,26 +283,26 @@ impl<S: Data<String>> InputTakeAtPosition for ImString<S> {
 fn test_input_take_at_position() {
     test_equivalence!("", |string: InputTakeAtPosition<Item = char>| {
         assert_eq!(
-            string.split_at_position::<_, ()>(|c| true).err().unwrap(),
+            string.split_at_position::<_, ()>(|_| true).err().unwrap(),
             Err::Incomplete(Needed::new(1))
         );
 
         assert_eq!(
             string
-                .split_at_position1::<_, ()>(|c| true, ErrorKind::Fail)
+                .split_at_position1::<_, ()>(|_| true, ErrorKind::Fail)
                 .err()
                 .unwrap(),
             Err::Incomplete(Needed::new(1))
         );
 
         let result = string
-            .split_at_position_complete::<_, ()>(|c| true)
+            .split_at_position_complete::<_, ()>(|_| true)
             .unwrap();
         assert_eq!(result.0, "");
         assert_eq!(result.1, "");
 
         let result = string
-            .split_at_position1_complete::<_, ()>(|c| true, ErrorKind::Fail)
+            .split_at_position1_complete::<_, ()>(|_| true, ErrorKind::Fail)
             .err()
             .unwrap();
         assert_eq!(result, Err::Error(()));
@@ -341,7 +342,7 @@ fn test_input_take_at_position() {
         );
 
         let result = string
-            .split_at_position_complete::<_, ()>(|c| true)
+            .split_at_position_complete::<_, ()>(|_| true)
             .unwrap();
         assert_eq!(result.0, "some input");
         assert_eq!(result.1, "");
@@ -353,13 +354,13 @@ fn test_input_take_at_position() {
         assert_eq!(result.1, "some");
 
         let result = string
-            .split_at_position_complete::<_, ()>(|c| false)
+            .split_at_position_complete::<_, ()>(|_| false)
             .unwrap();
         assert_eq!(result.0, "");
         assert_eq!(result.1, "some input");
 
         let result = string
-            .split_at_position1_complete::<_, ()>(|c| true, ErrorKind::Fail)
+            .split_at_position1_complete::<_, ()>(|_| true, ErrorKind::Fail)
             .err()
             .unwrap();
         assert_eq!(result, Err::Error(()));
@@ -371,7 +372,7 @@ fn test_input_take_at_position() {
         assert_eq!(result.1, "some");
 
         let result = string
-            .split_at_position1_complete::<_, ()>(|c| false, ErrorKind::Fail)
+            .split_at_position1_complete::<_, ()>(|_| false, ErrorKind::Fail)
             .unwrap();
         assert_eq!(result.0, "");
         assert_eq!(result.1, "some input");
