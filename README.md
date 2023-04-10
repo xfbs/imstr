@@ -43,7 +43,8 @@ copying.
 
 **Compatibility**: The API is designed to closely resemble Rust's standard
 library [`String`], facilitating smooth integration and being almost a drop-in
-replacement.
+replacement. It also integrates with many popular Rust crates, such as
+[`serde`], [`peg`] and [`nom`].
 
 **Generic over Storage**: The crate is flexible in terms of how the data is
 stored.  It allows for using `Arc<String>` for multithreaded applications and
@@ -89,9 +90,12 @@ Optional features that can be turned on using feature-flags.
 
 | Feature | Description |
 | --- | --- |
-| `serde` | Serialize and deserialize `ImString` fields as strings with the [`serde`] crate. |
-| `peg` | Use `ImString` as the data structure that is parsed with the [`peg`] crate. |
-| `nom` | Allow `ImString` to be used to build parsers with [`nom`]. |
+| `serde` | Serialize and deserialize `ImString` fields as strings with the
+[`serde`] crate. |
+| `peg` | Use `ImString` as the data structure that is parsed with the [`peg`]
+crate. See [`peg-list.rs`](examples/peg-list.rs) for an example. |
+| `nom` | Allow `ImString` to be used to build parsers with [`nom`]. See
+[`nom-json.rs`](examples/nom-json.rs) for an example. |
 
 ## Similar
 
