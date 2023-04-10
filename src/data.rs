@@ -3,9 +3,9 @@
 //! This module houses the [`Data`] trait, which allows for generic storage of shared data.
 //! This shared data is typically managed by an [`Arc`] or a [`Rc`], which are re-exported from
 //! this module for convenience.
-pub use std::boxed::Box;
-pub use std::rc::Rc;
-pub use std::sync::Arc;
+pub use alloc::boxed::Box;
+pub use alloc::rc::Rc;
+pub use alloc::sync::Arc;
 
 /// Set of common operations on shared data.
 ///
@@ -25,8 +25,7 @@ pub trait Data<T>: Clone {
     /// Thread-safe shared data using [`Arc<T>`]:
     ///
     /// ```
-    /// use imstr::data::Data;
-    /// use std::sync::Arc;
+    /// use imstr::data::{Data, Arc};
     ///
     /// let data = <Arc<_> as Data<_>>::new(15);
     /// ```
@@ -34,8 +33,7 @@ pub trait Data<T>: Clone {
     /// Non thread-safe shared data using [`Rc<T>`]:
     ///
     /// ```
-    /// use imstr::data::Data;
-    /// use std::rc::Rc;
+    /// use imstr::data::{Data, Rc};
     ///
     /// let data = <Rc<_> as Data<_>>::new(15);
     /// ```
@@ -48,8 +46,7 @@ pub trait Data<T>: Clone {
     /// Thread-safe shared data using [`Arc<T>`]:
     ///
     /// ```rust
-    /// use imstr::data::Data;
-    /// use std::sync::Arc;
+    /// use imstr::data::{Data, Arc};
     ///
     /// let data = Arc::new(15);
     /// assert_eq!(data.get(), &15);
@@ -58,8 +55,7 @@ pub trait Data<T>: Clone {
     /// Non thread-safe shared data using [`Rc<T>`]:
     ///
     /// ```rust
-    /// use imstr::data::Data;
-    /// use std::rc::Rc;
+    /// use imstr::data::{Data, Rc};
     ///
     /// let data = Rc::new(15);
     /// assert_eq!(data.get(), &15);
@@ -85,8 +81,7 @@ pub trait Data<T>: Clone {
     /// Mutating thread-safe data wrapped in [`Arc<T>`]:
     ///
     /// ```rust
-    /// use imstr::data::Data;
-    /// use std::sync::Arc;
+    /// use imstr::data::{Data, Arc};
     ///
     /// let mut data = Arc::new(15);
     /// if let Some(mut data) = data.get_mut() {
@@ -99,8 +94,7 @@ pub trait Data<T>: Clone {
     /// Mutating non-thread-safe data wrapped in [`Rc<T>`]:
     ///
     /// ```rust
-    /// use imstr::data::Data;
-    /// use std::rc::Rc;
+    /// use imstr::data::{Data, Rc};
     ///
     /// let mut data = Rc::new(15);
     /// if let Some(mut data) = data.get_mut() {
@@ -165,7 +159,7 @@ impl<T: Clone> Data<T> for Box<T> {
     }
 
     fn ptr_eq(&self, other: &Self) -> bool {
-        std::ptr::eq(&self, &other)
+        core::ptr::eq(&self, &other)
     }
 }
 
@@ -187,43 +181,48 @@ impl<T: Clone> Data<T> for Cloned<T> {
     }
 
     fn ptr_eq(&self, other: &Self) -> bool {
-        std::ptr::eq(&self.0, &other.0)
+        core::ptr::eq(&self.0, &other.0)
     }
 }
 
 #[cfg(test)]
-fn test_i32<T: Data<i32>>() {
-    let mut number = T::new(16);
-    assert_eq!(number.get(), &16);
-    if let Some(number) = number.get_mut() {
-        *number += 4;
+mod tests {
+    use super::*;
+    use alloc::string::String;
+
+    fn test_i32<T: Data<i32>>() {
+        let mut number = T::new(16);
+        assert_eq!(number.get(), &16);
+        if let Some(number) = number.get_mut() {
+            *number += 4;
+        }
+        assert_eq!(number.get(), &20);
+        let clone = number.clone();
+        assert_eq!(clone.get(), number.get());
     }
-    assert_eq!(number.get(), &20);
-    let clone = number.clone();
-    assert_eq!(clone.get(), number.get());
-}
 
-#[cfg(test)]
-fn test_string<T: Data<String>>() {
-    let mut string = T::new("Hello".into());
-    assert_eq!(string.get(), "Hello");
-    if let Some(string) = string.get_mut() {
-        string.push_str(", World!");
+    #[cfg(test)]
+    fn test_string<T: Data<String>>() {
+        let mut string = T::new("Hello".into());
+        assert_eq!(string.get(), "Hello");
+        if let Some(string) = string.get_mut() {
+            string.push_str(", World!");
+        }
+        assert_eq!(string.get(), "Hello, World!");
+        let clone = string.clone();
+        assert_eq!(clone.get(), string.get());
     }
-    assert_eq!(string.get(), "Hello, World!");
-    let clone = string.clone();
-    assert_eq!(clone.get(), string.get());
-}
 
-#[test]
-fn test_all() {
-    test_i32::<Cloned<i32>>();
-    test_i32::<Arc<i32>>();
-    test_i32::<Rc<i32>>();
-    test_i32::<Box<i32>>();
+    #[test]
+    fn test_all() {
+        test_i32::<Cloned<i32>>();
+        test_i32::<Arc<i32>>();
+        test_i32::<Rc<i32>>();
+        test_i32::<Box<i32>>();
 
-    test_string::<Cloned<String>>();
-    test_string::<Arc<String>>();
-    test_string::<Rc<String>>();
-    test_string::<Box<String>>();
+        test_string::<Cloned<String>>();
+        test_string::<Arc<String>>();
+        test_string::<Rc<String>>();
+        test_string::<Box<String>>();
+    }
 }

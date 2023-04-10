@@ -1,12 +1,12 @@
 use crate::data::Data;
 use crate::string::{CharIndices, Chars, ImString};
+use core::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use core::str::FromStr;
 use nom::{
     error::{ErrorKind, ParseError},
     AsBytes, Compare, CompareResult, Err, IResult, InputIter, InputLength, InputTake,
     InputTakeAtPosition, Needed, Offset, ParseTo, Slice,
 };
-use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
-use std::str::FromStr;
 
 /// Test that the specified function behaves the same regardless of whether the type is `&str` or
 /// `ImString`.

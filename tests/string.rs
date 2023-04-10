@@ -1,13 +1,8 @@
 // Taken from https://github.com/rust-lang/rust/blob/master/library/alloc/tests/string.rs
 use imstr::ImString;
 use std::borrow::Cow;
-use std::cell::Cell;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hash;
-use std::ops::Bound;
-use std::ops::Bound::*;
-use std::ops::RangeBounds;
-use std::panic;
 use std::str;
 use std::str::FromStr;
 

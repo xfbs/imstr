@@ -1,5 +1,6 @@
 //! Error types
-pub use std::string::{FromUtf16Error, FromUtf8Error};
+use alloc::fmt::{Display, Formatter, Result};
+pub use alloc::string::{FromUtf16Error, FromUtf8Error};
 
 /// A possible error when slicing a [`ImString`](crate::ImString).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -16,8 +17,8 @@ pub enum SliceError {
     EndNotAligned,
 }
 
-impl std::fmt::Display for SliceError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for SliceError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
             Self::StartOutOfBounds => write!(f, "start offset out of bounds"),
             Self::StartNotAligned => write!(f, "start offset in multibyte UTF-8 sequence"),
@@ -45,8 +46,8 @@ fn slice_error_traits() {
         // implements partial eq
         assert_eq!(error, new);
         // implements debug
-        format!("{error:?}");
+        alloc::format!("{error:?}");
         // implements display
-        format!("{new}");
+        alloc::format!("{new}");
     }
 }

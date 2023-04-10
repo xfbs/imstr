@@ -9,6 +9,9 @@
 //! This crate is heavily inspired by the standard library's [String](std::string::String) type and
 //! the `bytes` crate's [Bytes](https://docs.rs/bytes/latest/bytes/struct.Bytes.html) type.
 #![warn(missing_docs)]
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
 
 pub mod data;
 pub mod error;

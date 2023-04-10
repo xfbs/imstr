@@ -1,23 +1,28 @@
 //! [`ImString`] type and associated data store types.
 use crate::data::Data;
 use crate::error::*;
-use std::borrow::{Borrow, BorrowMut, Cow};
-use std::cmp::Ordering;
-use std::convert::{AsMut, AsRef, Infallible};
-use std::ffi::OsStr;
-use std::fmt::{Debug, Display, Error as FmtError, Formatter, Write};
-use std::hash::{Hash, Hasher};
-use std::iter::{Extend, FromIterator};
-use std::net::ToSocketAddrs;
-use std::ops::{
-    Add, AddAssign, Bound, Deref, DerefMut, Index, IndexMut, Range, RangeBounds, RangeFrom,
-    RangeFull, RangeInclusive, RangeTo,
+use alloc::{
+    borrow::Cow,
+    rc::Rc,
+    string::{String, ToString},
+    sync::Arc,
+    vec::Vec,
 };
-use std::path::Path;
-use std::rc::Rc;
-use std::str::FromStr;
-use std::string::{String, ToString};
-use std::sync::Arc;
+use core::{
+    borrow::{Borrow, BorrowMut},
+    cmp::Ordering,
+    convert::{AsMut, AsRef, Infallible},
+    fmt::{Debug, Display, Error as FmtError, Formatter, Write},
+    hash::{Hash, Hasher},
+    iter::{Extend, FromIterator},
+    ops::{
+        Add, AddAssign, Bound, Deref, DerefMut, Index, IndexMut, Range, RangeBounds, RangeFrom,
+        RangeFull, RangeInclusive, RangeTo,
+    },
+    str::FromStr,
+};
+#[cfg(feature = "std")]
+use std::{ffi::OsStr, net::ToSocketAddrs, path::Path};
 
 /// Threadsafe shared storage for string.
 pub type Threadsafe = Arc<String>;
@@ -230,7 +235,7 @@ impl<S: Data<String>> ImString<S> {
         if self.offset.start == 0 {
             if let Some(string) = self.string.get_mut() {
                 string.truncate(self.offset.end);
-                return std::mem::take(string);
+                return core::mem::take(string);
             }
         }
 
@@ -261,7 +266,7 @@ impl<S: Data<String>> ImString<S> {
     /// ```
     pub fn as_str(&self) -> &str {
         let slice = &self.string.get().as_bytes()[self.offset.start..self.offset.end];
-        unsafe { std::str::from_utf8_unchecked(slice) }
+        unsafe { core::str::from_utf8_unchecked(slice) }
     }
 
     /// Decode a UTF-16-encoded string into an [`ImString`], returning a [`FromUtf16Error`] if
@@ -407,7 +412,7 @@ impl<S: Data<String>> ImString<S> {
     unsafe fn unchecked_append<F: FnOnce(String) -> String>(&mut self, f: F) {
         match self.string.get_mut() {
             Some(mut string_ref) if self.offset.start == 0 => {
-                let mut string: String = std::mem::take(&mut string_ref);
+                let mut string: String = core::mem::take(&mut string_ref);
                 string.truncate(self.offset.end);
                 *string_ref = f(string);
             }
@@ -879,8 +884,7 @@ impl<S: Data<String>> ImString<S> {
     /// # Examples
     ///
     /// ```
-    /// use imstr::ImString;
-    /// use std::sync::Arc;
+    /// use imstr::{ImString, data::Arc};
     ///
     /// let string: ImString = ImString::from("hello world");
     /// let raw_string: Arc<String> = string.raw_string();
@@ -1189,7 +1193,7 @@ impl<S: Data<String>> IndexMut<RangeTo<usize>> for ImString<S> {
 /// assert_eq!(lines[1], "line");
 /// assert_eq!(lines[2], "input");
 /// ```
-pub type Lines<'a, S> = ImStringIterator<'a, S, std::str::Lines<'a>>;
+pub type Lines<'a, S> = ImStringIterator<'a, S, core::str::Lines<'a>>;
 
 /// Iterator wrapper over string slices of an [`ImString`].
 ///
@@ -1296,12 +1300,14 @@ impl<S: Data<String>> AsRef<str> for ImString<S> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<S: Data<String>> AsRef<Path> for ImString<S> {
     fn as_ref(&self) -> &Path {
         self.as_str().as_ref()
     }
 }
 
+#[cfg(feature = "std")]
 impl<S: Data<String>> AsRef<OsStr> for ImString<S> {
     fn as_ref(&self) -> &OsStr {
         self.as_str().as_ref()
@@ -1320,6 +1326,7 @@ impl<S: Data<String>> AsMut<str> for ImString<S> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<S: Data<String>> ToSocketAddrs for ImString<S> {
     type Iter = <String as ToSocketAddrs>::Iter;
     fn to_socket_addrs(&self) -> std::io::Result<<String as ToSocketAddrs>::Iter> {
@@ -1402,6 +1409,9 @@ impl<'a, S: Data<String>> FromIterator<&'a str> for ImString<S> {
 mod tests {
     use super::*;
     use crate::data::Cloned;
+    use alloc::boxed::Box;
+    use alloc::format;
+    use alloc::vec;
 
     fn test_strings<S: Data<String>>() -> Vec<ImString<S>> {
         let long = ImString::from("long string here");
@@ -1811,11 +1821,11 @@ mod tests {
         }
 
         #[test]
-        fn test_to_socket_addrs<S: Data<String>>(string: ImString<S>) {
-            #[cfg(not(miri))]
+        fn test_to_socket_addrs<S: Data<String>>(_string: ImString<S>) {
+            #[cfg(all(feature = "std", not(miri)))]
             {
-                let addrs = string.to_socket_addrs().map(|s| s.collect::<Vec<_>>());
-                let str_addrs = string.as_str().to_socket_addrs().map(|s| s.collect::<Vec<_>>());
+                let addrs = _string.to_socket_addrs().map(|s| s.collect::<Vec<_>>());
+                let str_addrs = _string.as_str().to_socket_addrs().map(|s| s.collect::<Vec<_>>());
                 match addrs {
                     Ok(addrs) => assert_eq!(addrs, str_addrs.unwrap()),
                     Err(_err) => assert!(str_addrs.is_err()),
@@ -1901,15 +1911,21 @@ mod tests {
         }
 
         #[test]
-        fn test_as_ref_path<S: Data<String>>(string: ImString<S>) {
-            let s: &Path = string.as_ref();
-            assert_eq!(s, string.as_str().as_ref() as &Path);
+        fn test_as_ref_path<S: Data<String>>(_string: ImString<S>) {
+            #[cfg(feature = "std")]
+            {
+                let s: &Path = _string.as_ref();
+                assert_eq!(s, _string.as_str().as_ref() as &Path);
+            }
         }
 
         #[test]
-        fn test_as_ref_os_str<S: Data<String>>(string: ImString<S>) {
-            let s: &OsStr = string.as_ref();
-            assert_eq!(s, string.as_str().as_ref() as &OsStr);
+        fn test_as_ref_os_str<S: Data<String>>(_string: ImString<S>) {
+            #[cfg(feature = "std")]
+            {
+                let s: &OsStr = _string.as_ref();
+                assert_eq!(s, _string.as_str().as_ref() as &OsStr);
+            }
         }
 
         #[test]
