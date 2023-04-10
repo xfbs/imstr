@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Adds `no_std` support
+
 ## Version 0.2.0
 
 - Adds `ptr_eq()` to `Data` trait
