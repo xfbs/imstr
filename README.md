@@ -1,6 +1,7 @@
 # Immutable Strings
 
 [![crates.io](https://img.shields.io/crates/v/imstr.svg)](https://crates.io/crates/imstr)
+[![docs.rs](https://img.shields.io/docsrs/imstr)](https://docs.rs/imstr)
 
 This crate offers a cheaply cloneable and sliceable UTF-8 string type. It is
 inspired by the [`bytes`] crate, which offers zero-copy byte slices, and the
