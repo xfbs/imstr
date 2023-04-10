@@ -90,12 +90,9 @@ Optional features that can be turned on using feature-flags.
 
 | Feature | Description |
 | --- | --- |
-| `serde` | Serialize and deserialize `ImString` fields as strings with the
-[`serde`] crate. |
-| `peg` | Use `ImString` as the data structure that is parsed with the [`peg`]
-crate. See [`peg-list.rs`](examples/peg-list.rs) for an example. |
-| `nom` | Allow `ImString` to be used to build parsers with [`nom`]. See
-[`nom-json.rs`](examples/nom-json.rs) for an example. |
+| `serde` | Serialize and deserialize `ImString` fields as strings with the [`serde`] crate. |
+| `peg` | Use `ImString` as the data structure that is parsed with the [`peg`] crate. See [`peg-list.rs`](examples/peg-list.rs) for an example. |
+| `nom` | Allow `ImString` to be used to build parsers with [`nom`]. See [`nom-json.rs`](examples/nom-json.rs) for an example. |
 
 ## Similar
 
