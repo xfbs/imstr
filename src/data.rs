@@ -110,6 +110,9 @@ pub trait Data<T>: Clone {
     /// assert_eq!(data.get(), &16);
     /// ```
     fn get_mut(&mut self) -> Option<&mut T>;
+
+    /// Determine if `other` points to the same data as this.
+    fn ptr_eq(&self, other: &Self) -> bool;
 }
 
 impl<T> Data<T> for Arc<T> {
@@ -123,6 +126,10 @@ impl<T> Data<T> for Arc<T> {
 
     fn get_mut(&mut self) -> Option<&mut T> {
         Arc::get_mut(self)
+    }
+
+    fn ptr_eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self, &other)
     }
 }
 
@@ -138,6 +145,10 @@ impl<T> Data<T> for Rc<T> {
     fn get_mut(&mut self) -> Option<&mut T> {
         Rc::get_mut(self)
     }
+
+    fn ptr_eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self, &other)
+    }
 }
 
 impl<T: Clone> Data<T> for Box<T> {
@@ -151,6 +162,10 @@ impl<T: Clone> Data<T> for Box<T> {
 
     fn get_mut(&mut self) -> Option<&mut T> {
         Some(self)
+    }
+
+    fn ptr_eq(&self, other: &Self) -> bool {
+        std::ptr::eq(&self, &other)
     }
 }
 
@@ -169,6 +184,10 @@ impl<T: Clone> Data<T> for Cloned<T> {
 
     fn get_mut(&mut self) -> Option<&mut T> {
         Some(&mut self.0)
+    }
+
+    fn ptr_eq(&self, other: &Self) -> bool {
+        std::ptr::eq(&self.0, &other.0)
     }
 }
 
@@ -197,7 +216,7 @@ fn test_string<T: Data<String>>() {
 }
 
 #[test]
-fn test_all_i32() {
+fn test_all() {
     test_i32::<Cloned<i32>>();
     test_i32::<Arc<i32>>();
     test_i32::<Rc<i32>>();
