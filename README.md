@@ -109,21 +109,21 @@ Here is the data, with links to the crates for further examination:
 
 | Crate | Cheap Clone| Cheap Slice | Mutable | Generic Storage | String Compatible | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| [`imstr`] | ✅ | ✅ | ✅ | ✅ | ✅ | This crate. |
-| [`tendril`] |✅|✅|✅|✅|❌| Complex implementation. API not quite compatible with [`String`], but otherwise closest to what this crate does. |
-| [`immut_string`] |✅|❌| 🟡 (no optimization) |❌|❌| Simply a wrapper around `Arc<String>`. |
-| [`immutable_string`] |✅|❌|❌|❌|❌| Wrapper around `Arc<str>`. |
-| [`arccstr`] |✅|❌|❌|❌|❌| Not UTF-8 (Null-terminated C string). Hand-written `Arc` implementation. |
-| [`implicit-clone`] |✅|❌|❌|🟡|✅| Immutable string library. Has `sync` and `unsync` variants. |
+| [`imstr`] | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | This crate. |
+| [`tendril`] |:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|❌| Complex implementation. API not quite compatible with [`String`], but otherwise closest to what this crate does. |
+| [`immut_string`] |:heavy_check_mark:|❌| 🟡 (no optimization) |❌|❌| Simply a wrapper around `Arc<String>`. |
+| [`immutable_string`] |:heavy_check_mark:|❌|❌|❌|❌| Wrapper around `Arc<str>`. |
+| [`arccstr`] |:heavy_check_mark:|❌|❌|❌|❌| Not UTF-8 (Null-terminated C string). Hand-written `Arc` implementation. |
+| [`implicit-clone`] |:heavy_check_mark:|❌|❌|🟡|:heavy_check_mark:| Immutable string library. Has `sync` and `unsync` variants. |
 | [`semistr`] |❌|❌|❌|❌|❌| Stores short strings inline. |
-| [`quetta`] |✅|✅|❌|❌|❌| Wrapper around `Arc<String>` that can be sliced. |
-| [`bytesstr`] |✅|🟡|❌|❌|❌| Wrapper around `Bytes`. Cannot be directly sliced. |
-| [`fast-str`] |✅|❌|❌|❌|❌| Looks like there could be some unsafety. |
-| [`flexstr`] |✅|❌|❌|✅|❌| |
-| [`bytestring`] |✅|🟡|❌|❌|❌| Wrapper around `Bytes`. Used by `actix`. Can be indirectly sliced using `slice_ref()`. |
-| [`arcstr`] |✅|✅|❌|❌|❌| Can store string literal as `&'static str`. |
-| [`cowstr`] |✅|❌|✅|❌|❌| Reimplements `Arc`, custom allocation strategy. |
-| [`strck`] |❌|❌|❌|✅|❌| Typechecked string library. |
+| [`quetta`] |:heavy_check_mark:|:heavy_check_mark:|❌|❌|❌| Wrapper around `Arc<String>` that can be sliced. |
+| [`bytesstr`] |:heavy_check_mark:|🟡|❌|❌|❌| Wrapper around `Bytes`. Cannot be directly sliced. |
+| [`fast-str`] |:heavy_check_mark:|❌|❌|❌|❌| Looks like there could be some unsafety. |
+| [`flexstr`] |:heavy_check_mark:|❌|❌|:heavy_check_mark:|❌| |
+| [`bytestring`] |:heavy_check_mark:|🟡|❌|❌|❌| Wrapper around `Bytes`. Used by `actix`. Can be indirectly sliced using `slice_ref()`. |
+| [`arcstr`] |:heavy_check_mark:|:heavy_check_mark:|❌|❌|❌| Can store string literal as `&'static str`. |
+| [`cowstr`] |:heavy_check_mark:|❌|:heavy_check_mark:|❌|❌| Reimplements `Arc`, custom allocation strategy. |
+| [`strck`] |❌|❌|❌|:heavy_check_mark:|❌| Typechecked string library. |
 
 ## License
 
