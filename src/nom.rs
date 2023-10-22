@@ -4,7 +4,7 @@ use core::ops::{Range, RangeFrom, RangeFull, RangeTo};
 use core::str::FromStr;
 use nom::{
     error::{ErrorKind, ParseError},
-    AsBytes, Compare, CompareResult, Err, IResult, InputIter, InputLength, InputTake,
+    AsBytes, Compare, CompareResult, Err, ExtendInto, IResult, InputIter, InputLength, InputTake,
     InputTakeAtPosition, Needed, Offset, ParseTo, Slice,
 };
 
@@ -521,5 +521,31 @@ fn test_parse_to() {
 
     test_equivalence!("-9", |string: ParseTo<i64>| {
         assert_eq!(string.parse_to(), Some(-9));
+    });
+}
+
+impl<S: Data<String>> ExtendInto for ImString<S> {
+    type Item = char;
+    type Extender = String;
+
+    #[inline]
+    fn new_builder(&self) -> String {
+        String::new()
+    }
+    #[inline]
+    fn extend_into(&self, acc: &mut String) {
+        acc.push_str(self);
+    }
+}
+
+#[test]
+fn test_extend_into() {
+    test_equivalence!("accumulated string", |string: ExtendInto<
+        Extender = String,
+    >| {
+        let mut res = string.new_builder();
+        string.extend_into(&mut res);
+
+        assert_eq!(res, "accumulated string");
     });
 }
