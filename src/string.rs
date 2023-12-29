@@ -918,6 +918,73 @@ impl<S: Data<String>> ImString<S> {
         self.offset.clone()
     }
 
+    /// Returns a reference of the `ImString`'s `offset` as a `Range<usize>`.
+    ///
+    /// The `offset` represents the start and end positions of the `ImString`'s view
+    /// into the underlying `String`. This method is useful when you need to work with
+    /// the raw offset values, for example, when creating a new `ImString` from a slice
+    /// of the current one.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use imstr::ImString;
+    /// use std::ops::Range;
+    ///
+    /// let string: ImString = ImString::from("hello world");
+    /// let raw_offset: &Range<usize> = string.raw_offset_ref();
+    /// assert_eq!(raw_offset, &(0..11));
+    /// ```
+    pub fn raw_offset_ref(&self) -> &Range<usize> {
+        &self.offset
+    }
+
+    /// Sets the `ImString`'s `offset` to the given `Range<usize>`.
+    ///
+    /// The `offset` represents the start and end positions of the `ImString`'s view
+    /// into the underlying `String`. This method is useful when you need to work with
+    /// the raw offset values, for example, when creating a new `ImString` from a slice
+    /// of the current one.
+    ///
+    /// # Returns
+    ///
+    /// Returns an error if the given `offset` is not a valid range within the underlying `String`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use imstr::ImString;
+    /// use std::ops::Range;
+    ///
+    /// let mut string: ImString = ImString::from("hello world");
+    /// string.try_set_offset(0..5).unwrap();
+    /// assert_eq!(string, "hello");
+    /// ```
+    pub fn try_set_offset(&mut self, range: impl RangeBounds<usize>) -> Result<(), SliceError> {
+        let start = match range.start_bound() {
+            Bound::Included(value) => *value,
+            Bound::Excluded(value) => *value + 1,
+            Bound::Unbounded => 0,
+        };
+        let end = match range.end_bound() {
+            Bound::Included(value) => *value - 1,
+            Bound::Excluded(value) => *value,
+            Bound::Unbounded => self.offset.len(),
+        };
+        if end < start {
+            return Err(SliceError::EndBeforeStart);
+        }
+        if !self.as_str().is_char_boundary(start) {
+            return Err(SliceError::StartNotAligned);
+        }
+        if !self.as_str().is_char_boundary(end) {
+            return Err(SliceError::EndNotAligned);
+        }
+
+        self.offset = start..end;
+        Ok(())
+    }
+
     /// An iterator over the lines of a string.
     ///
     /// Lines are split at line endings that are either newlines (`\n`) or sequences of a carriage
