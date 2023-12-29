@@ -23,6 +23,8 @@ use core::{
 };
 #[cfg(feature = "std")]
 use std::{ffi::OsStr, net::ToSocketAddrs, path::Path};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /// Threadsafe shared storage for string.
 pub type Threadsafe = Arc<String>;
@@ -64,6 +66,7 @@ pub type Local = Rc<String>;
 /// assert_eq!(string_slice, "hello");
 /// ```
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ImString<S: Data<String>> {
     /// Underlying string
     string: S,

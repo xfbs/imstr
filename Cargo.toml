@@ -23,7 +23,7 @@ required-features = ["peg"]
 [dependencies]
 nom = { version = "7.1.3", optional = true }
 peg-runtime = { version = "0.8.1", optional = true }
-serde = { version = "1.0.159", optional = true }
+serde = { version = "1.0.159", features = ["derive"], optional = true }
 
 [features]
 default = []
@@ -37,4 +37,3 @@ std = []
 [dev-dependencies]
 criterion = "0.4.0"
 peg = "0.8.1"
-
