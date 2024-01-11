@@ -4,8 +4,8 @@ use core::ops::{Range, RangeFrom, RangeFull, RangeTo};
 use core::str::FromStr;
 use nom::{
     error::{ErrorKind, ParseError},
-    AsBytes, Compare, CompareResult, Err, ExtendInto, IResult, InputIter, InputLength, InputTake,
-    InputTakeAtPosition, Needed, Offset, ParseTo, Slice,
+    AsBytes, Compare, CompareResult, Err, ExtendInto, FindSubstring, IResult, InputIter,
+    InputLength, InputTake, InputTakeAtPosition, Needed, Offset, ParseTo, Slice,
 };
 
 /// Test that the specified function behaves the same regardless of whether the type is `&str` or
@@ -479,6 +479,25 @@ fn test_compare_bytes() {
             CompareResult::Incomplete
         );
         assert_eq!(string.compare_no_case(&[84, 84, 84]), CompareResult::Error);
+    });
+}
+
+impl<'a, S: Data<String>> FindSubstring<&'a str> for ImString<S> {
+    fn find_substring(&self, sub_string: &'a str) -> std::option::Option<usize> {
+        self.as_str().find_substring(sub_string)
+    }
+}
+
+#[test]
+fn test_find_substring_str() {
+    test_equivalence!("", |string: FindSubstring<&'a str>| {
+        assert_eq!(string.find_substring(""), Some(0));
+        assert_eq!(string.find_substring("test"), None);
+    });
+
+    test_equivalence!(" test ", |string: FindSubstring<&'a str>| {
+        assert_eq!(string.find_substring("test"), Some(1));
+        assert_eq!(string.find_substring("bingo"), None);
     });
 }
 
