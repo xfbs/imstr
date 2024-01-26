@@ -974,10 +974,10 @@ impl<S: Data<String>> ImString<S> {
         if end < start {
             return Err(SliceError::EndBeforeStart);
         }
-        if !self.as_str().is_char_boundary(start) {
+        if !self.string.get().is_char_boundary(start) {
             return Err(SliceError::StartNotAligned);
         }
-        if !self.as_str().is_char_boundary(end) {
+        if !self.string.get().is_char_boundary(end) {
             return Err(SliceError::EndNotAligned);
         }
 
