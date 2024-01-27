@@ -21,10 +21,10 @@ use core::{
     },
     str::FromStr,
 };
-#[cfg(feature = "std")]
-use std::{ffi::OsStr, net::ToSocketAddrs, path::Path};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "std")]
+use std::{ffi::OsStr, net::ToSocketAddrs, path::Path};
 
 /// Threadsafe shared storage for string.
 pub type Threadsafe = Arc<String>;
@@ -1001,6 +1001,18 @@ impl<S: Data<String>> ImString<S> {
     /// ```
     pub fn trim_end(&self) -> Self {
         self.str_ref(self.as_str().trim_end())
+    }
+
+    /// Compares two `ImString`s first by their offsets and then by the pointers of the source strings.
+    /// Falls back to the string content comparison otherwise.
+    pub fn eq_slice(&self, other: &Self) -> bool {
+        if self.string.ptr_eq(&other.string) {
+            // if the pointers are equal, compare the offsets
+            return self.offset == other.offset;
+        } else {
+            // fall back to string content comparison
+            return self.as_str() == other.as_str();
+        }
     }
 }
 
