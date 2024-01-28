@@ -96,6 +96,10 @@ Optional features that can be turned on using feature-flags.
 
 ## Similar
 
+> There are several crates similar to this, which are listed in the [Rust String
+> Benchmarks](https://github.com/rosetta-rs/string-rosetta-rs). You may want
+> to check the other crates out as well.
+
 This is a comparison of this crate to other, similar crates. The comparison is
 made on these features:
 
